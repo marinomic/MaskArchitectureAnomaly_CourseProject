@@ -1,0 +1,18 @@
+.DS_Store
+**/.DS_Store
+__pycache__/
+**/__pycache__/
+*.pyc
+
+# Local datasets / artifacts
+Validation_Dataset/
+eval/results*.txt
+
+# Local conda envs / checkpoints
+eomt/.conda/
+eomt/checkpoints/
+
+# Download artifacts / cookies
+eomt/cookies.txt
+eomt/headers_pkg1.txt
+eomt/pkg1.bin

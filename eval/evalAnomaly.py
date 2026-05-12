@@ -1,6 +1,5 @@
 # Copyright (c) OpenMMLab. All rights reserved.
 import os
-import cv2
 import glob
 import torch
 import random
@@ -9,8 +8,6 @@ import numpy as np
 from erfnet import ERFNet
 import os.path as osp
 from argparse import ArgumentParser
-from ood_metrics import fpr_at_95_tpr, calc_metrics, plot_roc, plot_pr,plot_barcode
-from sklearn.metrics import roc_auc_score, roc_curve, auc, precision_recall_curve, average_precision_score
 from torchvision.transforms import Compose, Resize, ToTensor, Normalize
 
 seed = 42
@@ -40,6 +37,75 @@ target_transform = Compose(
     ]
 )
 
+def average_precision_score(y_true: np.ndarray, y_score: np.ndarray) -> float:
+    y_true = np.asarray(y_true).astype(np.int64)
+    y_score = np.asarray(y_score).astype(np.float64)
+    if y_true.ndim != 1 or y_score.ndim != 1 or y_true.shape[0] != y_score.shape[0]:
+        raise ValueError("y_true and y_score must be 1D arrays of the same length")
+
+    pos = int(np.sum(y_true == 1))
+    if pos == 0:
+        return 0.0
+
+    order = np.argsort(-y_score, kind="mergesort")
+    y_true_sorted = y_true[order]
+
+    tp = np.cumsum(y_true_sorted == 1)
+    fp = np.cumsum(y_true_sorted == 0)
+
+    precision = tp / np.maximum(tp + fp, 1)
+    recall = tp / pos
+
+    distinct_mask = np.r_[True, y_score[order][1:] != y_score[order][:-1]]
+    precision = precision[distinct_mask]
+    recall = recall[distinct_mask]
+
+    recall = np.r_[0.0, recall]
+    precision = np.r_[precision[0], precision]
+
+    return float(np.sum((recall[1:] - recall[:-1]) * precision[1:]))
+
+
+def fpr_at_95_tpr(y_score: np.ndarray, y_true: np.ndarray) -> float:
+    y_true = np.asarray(y_true).astype(np.int64)
+    y_score = np.asarray(y_score).astype(np.float64)
+    if y_true.ndim != 1 or y_score.ndim != 1 or y_true.shape[0] != y_score.shape[0]:
+        raise ValueError("y_true and y_score must be 1D arrays of the same length")
+
+    pos = int(np.sum(y_true == 1))
+    neg = int(np.sum(y_true == 0))
+    if pos == 0 or neg == 0:
+        return 0.0
+
+    order = np.argsort(-y_score, kind="mergesort")
+    y_true_sorted = y_true[order]
+
+    tp = np.cumsum(y_true_sorted == 1)
+    fp = np.cumsum(y_true_sorted == 0)
+
+    tpr = tp / pos
+    fpr = fp / neg
+
+    idx = np.where(tpr >= 0.95)[0]
+    if idx.size == 0:
+        return 1.0
+    return float(np.min(fpr[idx]))
+
+def anomaly_score_from_logits(logits: torch.Tensor, method: str) -> np.ndarray:
+    if method == "msp":
+        probs = torch.softmax(logits, dim=1)
+        score = 1.0 - probs.max(dim=1).values
+        return score.squeeze(0).detach().cpu().numpy()
+    if method == "max_logit":
+        score = -logits.max(dim=1).values
+        return score.squeeze(0).detach().cpu().numpy()
+    if method == "max_entropy":
+        log_probs = torch.log_softmax(logits, dim=1)
+        probs = log_probs.exp()
+        entropy = -(probs * log_probs).sum(dim=1)
+        return entropy.squeeze(0).detach().cpu().numpy()
+    raise ValueError(f"Unknown method: {method}")
+
 
 def main():
     parser = ArgumentParser()
@@ -58,6 +124,7 @@ def main():
     parser.add_argument('--num-workers', type=int, default=4)
     parser.add_argument('--batch-size', type=int, default=1)
     parser.add_argument('--cpu', action='store_true')
+    parser.add_argument('--method', default="msp", choices=["msp", "max_logit", "max_entropy"])
     args = parser.parse_args()
     anomaly_score_list = []
     ood_gts_list = []
@@ -74,8 +141,12 @@ def main():
 
     model = ERFNet(NUM_CLASSES)
 
-    if (not args.cpu):
-        model = torch.nn.DataParallel(model).cuda()
+    use_cuda = (not args.cpu) and torch.cuda.is_available()
+    device = torch.device("cuda" if use_cuda else "cpu")
+    if use_cuda:
+        model = torch.nn.DataParallel(model).to(device)
+    else:
+        model = model.to(device)
 
     def load_my_state_dict(model, state_dict):  #custom function to load model when not all dict elements
         own_state = model.state_dict()
@@ -96,11 +167,10 @@ def main():
     
     for path in glob.glob(os.path.expanduser(str(args.input[0]))):
         print(path)
-        images = input_transform((Image.open(path).convert('RGB'))).unsqueeze(0).float().cuda()
-        images = images.permute(0,3,1,2)
+        images = input_transform((Image.open(path).convert('RGB'))).unsqueeze(0).float().to(device)
         with torch.no_grad():
             result = model(images)
-        anomaly_result = 1.0 - np.max(result.squeeze(0).data.cpu().numpy(), axis=0)            
+        anomaly_result = anomaly_score_from_logits(result, args.method)
         pathGT = path.replace("images", "labels_masks")                
         if "RoadObsticle21" in pathGT:
            pathGT = pathGT.replace("webp", "png")
@@ -109,13 +179,15 @@ def main():
         if "RoadAnomaly" in pathGT:
            pathGT = pathGT.replace("jpg", "png")  
 
+        if not osp.exists(pathGT):
+            continue
         mask = Image.open(pathGT)
         mask = target_transform(mask)
         ood_gts = np.array(mask)
 
         if "RoadAnomaly" in pathGT:
             ood_gts = np.where((ood_gts==2), 1, ood_gts)
-        if "LostAndFound" in pathGT:
+        if ("LostAndFound" in pathGT) or ("LostFound" in pathGT) or ("FS_LostFound_full" in pathGT):
             ood_gts = np.where((ood_gts==0), 255, ood_gts)
             ood_gts = np.where((ood_gts==1), 0, ood_gts)
             ood_gts = np.where((ood_gts>1)&(ood_gts<201), 1, ood_gts)
@@ -153,10 +225,11 @@ def main():
     prc_auc = average_precision_score(val_label, val_out)
     fpr = fpr_at_95_tpr(val_out, val_label)
 
+    print(f'Method: {args.method}')
     print(f'AUPRC score: {prc_auc*100.0}')
     print(f'FPR@TPR95: {fpr*100.0}')
 
-    file.write(('    AUPRC score:' + str(prc_auc*100.0) + '   FPR@TPR95:' + str(fpr*100.0) ))
+    file.write(('    method:' + str(args.method) + '   AUPRC score:' + str(prc_auc*100.0) + '   FPR@TPR95:' + str(fpr*100.0) ))
     file.close()
 
 if __name__ == '__main__':
