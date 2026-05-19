@@ -3,14 +3,12 @@
 __pycache__/
 **/__pycache__/
 *.pyc
+.tools/
 
 # Local datasets / artifacts
-Validation_Dataset/
-eval/results*.txt
 
 # Local conda envs / checkpoints
 eomt/.conda/
-eomt/checkpoints/
 
 # Download artifacts / cookies
 eomt/cookies.txt
