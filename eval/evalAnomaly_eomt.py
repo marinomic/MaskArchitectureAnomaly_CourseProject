@@ -130,9 +130,13 @@ def load_gt_mask(path: str, pred_hw: Tuple[int, int]) -> np.ndarray:
     if "RoadAnomaly" in pathGT:
         ood_gts = np.where((ood_gts == 2), 1, ood_gts)
     if ("LostAndFound" in pathGT) or ("LostFound" in pathGT) or ("FS_LostFound_full" in pathGT):
-        ood_gts = np.where((ood_gts == 0), 255, ood_gts)
-        ood_gts = np.where((ood_gts == 1), 0, ood_gts)
-        ood_gts = np.where((ood_gts > 1) & (ood_gts < 201), 1, ood_gts)
+        unique_vals = set(np.unique(ood_gts).tolist())
+        # Some preprocessed Fishyscapes/Lost&Found masks are already binary:
+        # 0=in-distribution, 1=anomaly, 255=ignore. In that case, keep them as-is.
+        if not unique_vals.issubset({0, 1, 255}):
+            ood_gts = np.where((ood_gts == 0), 255, ood_gts)
+            ood_gts = np.where((ood_gts == 1), 0, ood_gts)
+            ood_gts = np.where((ood_gts > 1) & (ood_gts < 201), 1, ood_gts)
 
     if "Streethazard" in pathGT:
         ood_gts = np.where((ood_gts == 14), 255, ood_gts)
@@ -140,6 +144,18 @@ def load_gt_mask(path: str, pred_hw: Tuple[int, int]) -> np.ndarray:
         ood_gts = np.where((ood_gts == 255), 1, ood_gts)
 
     return ood_gts
+
+
+def infer_dataset_name(input_pattern: str) -> str:
+    norm = input_pattern.replace("\\", "/")
+    parts = [p for p in norm.split("/") if p]
+    if "Validation_Dataset" in parts:
+        idx = parts.index("Validation_Dataset")
+        if idx + 1 < len(parts):
+            return parts[idx + 1]
+    if len(parts) >= 2:
+        return parts[-2]
+    return input_pattern
 
 
 def build_model(args) -> MaskClassificationSemantic:
@@ -211,6 +227,7 @@ def main():
     args = parser.parse_args()
 
     model = build_model(args)
+    dataset_name = infer_dataset_name(str(args.input[0]))
 
     anomaly_score_list = []
     ood_gts_list = []
@@ -241,8 +258,15 @@ def main():
     f.write("\n")
 
     if len(ood_gts_list) == 0:
+        print(f"Dataset: {dataset_name}")
         print("No valid samples found (missing labels or no anomaly pixels).")
-        f.write("    method:" + str(args.method) + "   no_valid_samples\n")
+        f.write(
+            "    dataset:"
+            + dataset_name
+            + "   method:"
+            + str(args.method)
+            + "   no_valid_samples\n"
+        )
         f.close()
         return
 
@@ -265,12 +289,15 @@ def main():
     fpr = fpr_at_95_tpr(val_out, val_label)
 
     print(f"Model: EoMT")
+    print(f"Dataset: {dataset_name}")
     print(f"Method: {args.method}")
     print(f"AUPRC score: {prc_auc*100.0}")
     print(f"FPR@TPR95: {fpr*100.0}")
 
     f.write(
-        "    method:"
+        "    dataset:"
+        + dataset_name
+        + "   method:"
         + str(args.method)
         + "   AUPRC score:"
         + str(prc_auc * 100.0)
