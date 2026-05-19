@@ -144,7 +144,11 @@ def load_gt_mask(path: str, pred_hw: Tuple[int, int]) -> np.ndarray:
 
 def build_model(args) -> MaskClassificationSemantic:
     img_size = (args.img_size_h, args.img_size_w)
-    encoder = ViT(img_size=img_size, backbone_name=args.backbone_name)
+    # Pass ckpt_path so ViT skips downloading external pretrained backbone weights.
+    # The full EoMT checkpoint is loaded below and provides the actual parameters.
+    encoder = ViT(
+        img_size=img_size, backbone_name=args.backbone_name, ckpt_path=args.ckpt
+    )
     masked_attn_enabled = not args.masked_attn_disabled
     network = EoMT(
         encoder=encoder,
