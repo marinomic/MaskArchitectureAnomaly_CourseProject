@@ -95,6 +95,7 @@ def infer_scores_semantic(
 
 def anomaly_map_from_scores(scores: torch.Tensor, method: str) -> np.ndarray:
     scores = scores.float()
+    raw_scores = scores
     scores = torch.clamp(scores, min=0.0)
     probs = scores / (scores.sum(dim=0, keepdim=True) + 1e-6)
 
@@ -107,6 +108,8 @@ def anomaly_map_from_scores(scores: torch.Tensor, method: str) -> np.ndarray:
         logits = torch.log(probs + 1e-12)
         entropy = -(probs * logits).sum(dim=0)
         return entropy.detach().cpu().numpy()
+    if method == "rba":
+        return (-torch.tanh(raw_scores).sum(dim=0)).detach().cpu().numpy()
     raise ValueError(f"Unknown method: {method}")
 
 
@@ -213,7 +216,7 @@ def main():
     parser = ArgumentParser()
     parser.add_argument("--input", nargs="+", required=True)
     parser.add_argument("--ckpt", required=True)
-    parser.add_argument("--method", default="msp", choices=["msp", "max_logit", "max_entropy"])
+    parser.add_argument("--method", default="msp", choices=["msp", "max_logit", "max_entropy", "rba"])
     parser.add_argument("--cpu", action="store_true")
 
     parser.add_argument("--img_size_h", type=int, default=1024)

@@ -104,6 +104,9 @@ def anomaly_score_from_logits(logits: torch.Tensor, method: str) -> np.ndarray:
         probs = log_probs.exp()
         entropy = -(probs * log_probs).sum(dim=1)
         return entropy.squeeze(0).detach().cpu().numpy()
+    if method == "rba":
+        score = -torch.tanh(logits).sum(dim=1)
+        return score.squeeze(0).detach().cpu().numpy()
     raise ValueError(f"Unknown method: {method}")
 
 
@@ -124,7 +127,7 @@ def main():
     parser.add_argument('--num-workers', type=int, default=4)
     parser.add_argument('--batch-size', type=int, default=1)
     parser.add_argument('--cpu', action='store_true')
-    parser.add_argument('--method', default="msp", choices=["msp", "max_logit", "max_entropy"])
+    parser.add_argument('--method', default="msp", choices=["msp", "max_logit", "max_entropy", "rba"])
     args = parser.parse_args()
     anomaly_score_list = []
     ood_gts_list = []
