@@ -161,8 +161,41 @@ def infer_dataset_name(input_pattern: str) -> str:
     return input_pattern
 
 
+def load_checkpoint_state(ckpt_path: str) -> dict[str, torch.Tensor]:
+    ckpt = torch.load(ckpt_path, map_location="cpu", weights_only=True)
+    if "state_dict" in ckpt:
+        ckpt = ckpt["state_dict"]
+    return {k: v for k, v in ckpt.items() if "criterion.empty_weight" not in k}
+
+
+def infer_model_hparams_from_ckpt(ckpt: dict[str, torch.Tensor]) -> dict[str, int]:
+    q_key = "network.q.weight"
+    class_key = "network.class_head.weight"
+    blocks_key = "network.attn_mask_probs"
+
+    if q_key not in ckpt or class_key not in ckpt:
+        raise KeyError(
+            "Checkpoint is missing required keys to infer model structure: "
+            f"{q_key}, {class_key}"
+        )
+
+    num_q = int(ckpt[q_key].shape[0])
+    num_classes = int(ckpt[class_key].shape[0] - 1)
+    num_blocks = (
+        int(ckpt[blocks_key].numel()) if blocks_key in ckpt else 3
+    )
+    return {
+        "num_q": num_q,
+        "num_classes": num_classes,
+        "num_blocks": num_blocks,
+    }
+
+
 def build_model(args) -> MaskClassificationSemantic:
     img_size = (args.img_size_h, args.img_size_w)
+    ckpt = load_checkpoint_state(args.ckpt)
+    inferred = infer_model_hparams_from_ckpt(ckpt)
+
     # Pass ckpt_path so ViT skips downloading external pretrained backbone weights.
     # The full EoMT checkpoint is loaded below and provides the actual parameters.
     encoder = ViT(
@@ -171,15 +204,15 @@ def build_model(args) -> MaskClassificationSemantic:
     masked_attn_enabled = not args.masked_attn_disabled
     network = EoMT(
         encoder=encoder,
-        num_classes=args.num_classes,
-        num_q=args.num_q,
-        num_blocks=args.num_blocks,
+        num_classes=inferred["num_classes"],
+        num_q=inferred["num_q"],
+        num_blocks=inferred["num_blocks"],
         masked_attn_enabled=masked_attn_enabled,
     )
     model = MaskClassificationSemantic(
         network=network,
         img_size=img_size,
-        num_classes=args.num_classes,
+        num_classes=inferred["num_classes"],
         attn_mask_annealing_enabled=args.attn_mask_annealing_enabled,
         ckpt_path=None,
         load_ckpt_class_head=True,
@@ -188,7 +221,6 @@ def build_model(args) -> MaskClassificationSemantic:
     device = torch.device("cuda" if use_cuda else "cpu")
     model = model.to(device).eval()
 
-    ckpt = model._load_ckpt(args.ckpt, load_ckpt_class_head=True)
     pos_key = "network.encoder.backbone.pos_embed"
     if pos_key in ckpt:
         target_grid = model.network.encoder.backbone.patch_embed.grid_size
@@ -221,9 +253,6 @@ def main():
 
     parser.add_argument("--img_size_h", type=int, default=1024)
     parser.add_argument("--img_size_w", type=int, default=1024)
-    parser.add_argument("--num_classes", type=int, default=19)
-    parser.add_argument("--num_q", type=int, default=100)
-    parser.add_argument("--num_blocks", type=int, default=3)
     parser.add_argument("--backbone_name", default="vit_base_patch14_reg4_dinov2")
     parser.add_argument("--masked_attn_disabled", action="store_true")
     parser.add_argument("--attn_mask_annealing_enabled", action="store_true")
