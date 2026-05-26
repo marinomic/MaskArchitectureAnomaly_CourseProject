@@ -94,19 +94,16 @@ def infer_scores_semantic(
 
 
 def anomaly_map_from_scores(scores: torch.Tensor, method: str) -> np.ndarray:
-    scores = scores.float()
-    raw_scores = scores
-    scores = torch.clamp(scores, min=0.0)
-    probs = scores / (scores.sum(dim=0, keepdim=True) + 1e-6)
+    raw_scores = scores.float()
+    probs = torch.softmax(raw_scores, dim=0)
 
     if method == "msp":
         return (1.0 - probs.max(dim=0).values).detach().cpu().numpy()
     if method == "max_logit":
-        logits = torch.log(probs + 1e-12)
-        return (-logits.max(dim=0).values).detach().cpu().numpy()
+        return (-raw_scores.max(dim=0).values).detach().cpu().numpy()
     if method == "max_entropy":
-        logits = torch.log(probs + 1e-12)
-        entropy = -(probs * logits).sum(dim=0)
+        log_probs = torch.log_softmax(raw_scores, dim=0)
+        entropy = -(probs * log_probs).sum(dim=0)
         return entropy.detach().cpu().numpy()
     if method == "rba":
         return (-torch.tanh(raw_scores).sum(dim=0)).detach().cpu().numpy()
