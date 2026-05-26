@@ -162,7 +162,12 @@ def load_erfnet(args, device: torch.device) -> nn.Module:
         return model
 
     model = load_my_state_dict(
-        model, torch.load(weightspath, map_location=lambda storage, _: storage)
+        model,
+        torch.load(
+            weightspath,
+            map_location=lambda storage, _: storage,
+            weights_only=False,
+        ),
     )
     print("Model and weights LOADED successfully")
     model.eval()

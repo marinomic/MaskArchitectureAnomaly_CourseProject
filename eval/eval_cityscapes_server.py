@@ -89,7 +89,10 @@ def main(args):
             own_state[name].copy_(param)
         return model
 
-    model = load_my_state_dict(model, torch.load(weightspath))
+    model = load_my_state_dict(
+        model,
+        torch.load(weightspath, weights_only=False),
+    )
     print ("Model and weights LOADED successfully")
 
     model.eval()
