@@ -131,7 +131,7 @@ def main():
     parser = ArgumentParser()
     parser.add_argument(
         "--input",
-        default="/home/shyam/Mask2Former/unk-eval/RoadObsticle21/images/*.webp",
+        default=["../Validation_Dataset/RoadAnomaly/images/*.jpg"],
         nargs="+",
         help="A list of space separated input images; "
         "or a single glob pattern such as 'directory/*.jpg'",
@@ -147,6 +147,8 @@ def main():
     parser.add_argument('--method', default="msp", choices=["msp", "max_logit", "max_entropy", "rba"])
     parser.add_argument('--temperature', type=float, default=1.0)
     args = parser.parse_args()
+    if isinstance(args.input, str):
+        args.input = [args.input]
     anomaly_score_list = []
     ood_gts_list = []
     dataset_name = infer_dataset_name(str(args.input[0]))

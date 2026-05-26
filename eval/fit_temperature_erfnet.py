@@ -8,6 +8,7 @@ from argparse import ArgumentParser
 import numpy as np
 import torch
 from torch import nn, optim
+from torchvision.datasets import Cityscapes
 from torchvision.transforms import Compose, Resize
 from torchvision.transforms import ToTensor
 from PIL import Image
@@ -20,7 +21,6 @@ sys.path.insert(0, osp.join(_ROOT, "third_party", "temperature_scaling"))
 from dataset import cityscapes
 from erfnet import ERFNet
 from temperature_scaling import _ECELoss
-from transform import Relabel, ToLabel
 
 
 seed = 42
@@ -30,6 +30,28 @@ torch.manual_seed(seed)
 
 NUM_CLASSES = 20
 IGNORE_INDEX = 19
+
+
+class LabelIdsToTrainIds:
+    def __init__(self, ignore_index: int = IGNORE_INDEX):
+        mapping = np.full(256, 255, dtype=np.uint8)
+        for cls in Cityscapes.classes:
+            if cls.id < 0:
+                continue
+            train_id = cls.train_id
+            if train_id == 255 or cls.ignore_in_eval:
+                mapping[cls.id] = 255
+            else:
+                mapping[cls.id] = train_id
+        mapping[255] = 255
+        self.mapping = mapping
+        self.ignore_index = ignore_index
+
+    def __call__(self, image):
+        label_ids = np.array(image, dtype=np.uint8)
+        train_ids = self.mapping[label_ids]
+        train_ids[train_ids == 255] = self.ignore_index
+        return torch.from_numpy(train_ids.astype(np.int64)).unsqueeze(0)
 
 input_transform_cityscapes = Compose(
     [
@@ -41,8 +63,7 @@ input_transform_cityscapes = Compose(
 target_transform_cityscapes = Compose(
     [
         Resize(512, Image.NEAREST),
-        ToLabel(),
-        Relabel(255, IGNORE_INDEX),
+        LabelIdsToTrainIds(),
     ]
 )
 
@@ -141,7 +162,7 @@ def load_erfnet(args, device: torch.device) -> nn.Module:
         return model
 
     model = load_my_state_dict(
-        model, torch.load(weightspath, map_location=lambda storage, loc: storage)
+        model, torch.load(weightspath, map_location=lambda storage, _: storage)
     )
     print("Model and weights LOADED successfully")
     model.eval()
@@ -179,6 +200,7 @@ def collect_validation_logits(args, model: nn.Module, device: torch.device):
             input_transform_cityscapes,
             target_transform_cityscapes,
             subset=args.subset,
+            label_suffix="_labelIds.png",
         ),
         num_workers=args.num_workers,
         batch_size=args.batch_size,

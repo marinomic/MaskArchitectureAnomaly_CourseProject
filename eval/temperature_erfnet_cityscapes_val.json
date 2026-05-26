@@ -1,0 +1,12 @@
+{
+  "method": "temperature_scaling",
+  "model": "ERFNet",
+  "subset": "val",
+  "datadir": "../Cityscapes_tempfit",
+  "max_pixels_per_image": 4096,
+  "temperature": 1.3081883192062378,
+  "before_nll": 0.17775800824165344,
+  "after_nll": 0.16707442700862885,
+  "before_ece": 0.016932619735598564,
+  "after_ece": 0.0031843502074480057
+}

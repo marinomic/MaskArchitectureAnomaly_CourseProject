@@ -3,7 +3,6 @@
 # Eduardo Romera
 #######################
 
-import numpy as np
 import os
 
 from PIL import Image
@@ -18,8 +17,8 @@ def load_image(file):
 def is_image(filename):
     return any(filename.endswith(ext) for ext in EXTENSIONS)
 
-def is_label(filename):
-    return filename.endswith("_labelTrainIds.png")
+def is_label(filename, suffix="_labelTrainIds.png"):
+    return filename.endswith(suffix)
 
 def image_path(root, basename, extension):
     return os.path.join(root, f'{basename}{extension}')
@@ -64,15 +63,32 @@ class VOC12(Dataset):
 
 class cityscapes(Dataset):
 
-    def __init__(self, root, input_transform=None, target_transform=None, subset='val'):
+    def __init__(
+        self,
+        root,
+        input_transform=None,
+        target_transform=None,
+        subset='val',
+        label_suffix="_labelTrainIds.png",
+    ):
 
         self.images_root = os.path.join(root, 'leftImg8bit/' + subset)
         self.labels_root = os.path.join(root, 'gtFine/' + subset)
         print(self.images_root, self.labels_root)
-        self.filenames = [os.path.join(dp, f) for dp, dn, fn in os.walk(os.path.expanduser(self.images_root)) for f in fn if is_image(f)]
+        self.filenames = [
+            os.path.join(dp, f)
+            for dp, _, fn in os.walk(os.path.expanduser(self.images_root))
+            for f in fn
+            if is_image(f)
+        ]
         self.filenames.sort()
 
-        self.filenamesGt = [os.path.join(dp, f) for dp, dn, fn in os.walk(os.path.expanduser(self.labels_root)) for f in fn if is_label(f)]
+        self.filenamesGt = [
+            os.path.join(dp, f)
+            for dp, _, fn in os.walk(os.path.expanduser(self.labels_root))
+            for f in fn
+            if is_label(f, suffix=label_suffix)
+        ]
         self.filenamesGt.sort()
 
         self.input_transform = input_transform
@@ -84,9 +100,9 @@ class cityscapes(Dataset):
 
         #print(filename)
 
-        with open(image_path_city(self.images_root, filename), 'rb') as f:
+        with open(filename, 'rb') as f:
             image = load_image(f).convert('RGB')
-        with open(image_path_city(self.labels_root, filenameGt), 'rb') as f:
+        with open(filenameGt, 'rb') as f:
             label = load_image(f).convert('P')
 
         if self.input_transform is not None:
@@ -98,4 +114,3 @@ class cityscapes(Dataset):
 
     def __len__(self):
         return len(self.filenames)
-

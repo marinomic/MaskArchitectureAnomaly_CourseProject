@@ -36,3 +36,11 @@
     method:max_entropy   AUPRC score:0.0   FPR@TPR95:0.0
     method:max_entropy   AUPRC score:8.836483520223936   FPR@TPR95:41.54602572366551
     method:max_entropy   AUPRC score:12.66852439888792   FPR@TPR95:82.74863831318966
+    dataset:RoadAnomaly   method:msp   temperature:0.5   AUPRC score:11.9174235952018   FPR@TPR95:85.9732012588339
+    dataset:RoadAnomaly   method:msp   temperature:0.75   AUPRC score:12.318217845287363   FPR@TPR95:82.32552312244067
+    dataset:RoadAnomaly   method:msp   temperature:1.1   AUPRC score:12.460464023147338   FPR@TPR95:82.73372591024545
+    dataset:RoadAnomaly   method:msp   temperature:1.308188   AUPRC score:12.528219985138916   FPR@TPR95:83.10371500433867
+    dataset:RoadAnomaly21   method:msp   temperature:1.308188   AUPRC score:0.0   FPR@TPR95:0.0
+    dataset:RoadObsticle21   method:msp   temperature:1.308188   AUPRC score:2.85941338846265   FPR@TPR95:67.2105610500934
+    dataset:FS_LostFound_full   method:msp   temperature:1.308188   AUPRC score:0.0   FPR@TPR95:0.0
+    dataset:fs_static   method:msp   temperature:1.308188   AUPRC score:8.163884650702293   FPR@TPR95:41.30004442168476
