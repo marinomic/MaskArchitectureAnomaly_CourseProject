@@ -91,16 +91,33 @@ def fpr_at_95_tpr(y_score: np.ndarray, y_true: np.ndarray) -> float:
         return 1.0
     return float(np.min(fpr[idx]))
 
-def anomaly_score_from_logits(logits: torch.Tensor, method: str) -> np.ndarray:
+def infer_dataset_name(input_pattern: str) -> str:
+    norm = input_pattern.replace("\\", "/")
+    parts = [p for p in norm.split("/") if p]
+    if "Validation_Dataset" in parts:
+        idx = parts.index("Validation_Dataset")
+        if idx + 1 < len(parts):
+            return parts[idx + 1]
+    if len(parts) >= 2:
+        return parts[-2]
+    return input_pattern
+
+
+def anomaly_score_from_logits(
+    logits: torch.Tensor, method: str, temperature: float = 1.0
+) -> np.ndarray:
+    temperature = max(float(temperature), 1e-8)
+    scaled_logits = logits / temperature
+
     if method == "msp":
-        probs = torch.softmax(logits, dim=1)
+        probs = torch.softmax(scaled_logits, dim=1)
         score = 1.0 - probs.max(dim=1).values
         return score.squeeze(0).detach().cpu().numpy()
     if method == "max_logit":
         score = -logits.max(dim=1).values
         return score.squeeze(0).detach().cpu().numpy()
     if method == "max_entropy":
-        log_probs = torch.log_softmax(logits, dim=1)
+        log_probs = torch.log_softmax(scaled_logits, dim=1)
         probs = log_probs.exp()
         entropy = -(probs * log_probs).sum(dim=1)
         return entropy.squeeze(0).detach().cpu().numpy()
@@ -128,9 +145,11 @@ def main():
     parser.add_argument('--batch-size', type=int, default=1)
     parser.add_argument('--cpu', action='store_true')
     parser.add_argument('--method', default="msp", choices=["msp", "max_logit", "max_entropy", "rba"])
+    parser.add_argument('--temperature', type=float, default=1.0)
     args = parser.parse_args()
     anomaly_score_list = []
     ood_gts_list = []
+    dataset_name = infer_dataset_name(str(args.input[0]))
 
     if not os.path.exists('results.txt'):
         open('results.txt', 'w').close()
@@ -173,7 +192,7 @@ def main():
         images = input_transform((Image.open(path).convert('RGB'))).unsqueeze(0).float().to(device)
         with torch.no_grad():
             result = model(images)
-        anomaly_result = anomaly_score_from_logits(result, args.method)
+        anomaly_result = anomaly_score_from_logits(result, args.method, args.temperature)
         pathGT = path.replace("images", "labels_masks")                
         if "RoadObsticle21" in pathGT:
            pathGT = pathGT.replace("webp", "png")
@@ -232,11 +251,19 @@ def main():
     prc_auc = average_precision_score(val_label, val_out)
     fpr = fpr_at_95_tpr(val_out, val_label)
 
+    print(f'Dataset: {dataset_name}')
     print(f'Method: {args.method}')
+    print(f'Temperature: {args.temperature}')
     print(f'AUPRC score: {prc_auc*100.0}')
     print(f'FPR@TPR95: {fpr*100.0}')
 
-    file.write(('    method:' + str(args.method) + '   AUPRC score:' + str(prc_auc*100.0) + '   FPR@TPR95:' + str(fpr*100.0) ))
+    file.write(
+        '    dataset:' + dataset_name +
+        '   method:' + str(args.method) +
+        '   temperature:' + str(args.temperature) +
+        '   AUPRC score:' + str(prc_auc*100.0) +
+        '   FPR@TPR95:' + str(fpr*100.0)
+    )
     file.close()
 
 if __name__ == '__main__':
