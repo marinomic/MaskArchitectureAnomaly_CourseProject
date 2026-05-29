@@ -93,16 +93,20 @@ def infer_scores_semantic(
     return scores_list[0]
 
 
-def anomaly_map_from_scores(scores: torch.Tensor, method: str) -> np.ndarray:
+def anomaly_map_from_scores(
+    scores: torch.Tensor, method: str, temperature: float = 1.0
+) -> np.ndarray:
     raw_scores = scores.float()
-    probs = torch.softmax(raw_scores, dim=0)
+    temperature = max(float(temperature), 1e-8)
+    scaled_scores = raw_scores / temperature
+    probs = torch.softmax(scaled_scores, dim=0)
 
     if method == "msp":
         return (1.0 - probs.max(dim=0).values).detach().cpu().numpy()
     if method == "max_logit":
-        return (-raw_scores.max(dim=0).values).detach().cpu().numpy()
+        return (-scaled_scores.max(dim=0).values).detach().cpu().numpy()
     if method == "max_entropy":
-        log_probs = torch.log_softmax(raw_scores, dim=0)
+        log_probs = torch.log_softmax(scaled_scores, dim=0)
         entropy = -(probs * log_probs).sum(dim=0)
         return entropy.detach().cpu().numpy()
     if method == "rba":
@@ -247,6 +251,7 @@ def main():
     parser.add_argument("--ckpt", required=True)
     parser.add_argument("--method", default="msp", choices=["msp", "max_logit", "max_entropy", "rba"])
     parser.add_argument("--cpu", action="store_true")
+    parser.add_argument("--temperature", type=float, default=1.0)
 
     parser.add_argument("--img_size_h", type=int, default=1024)
     parser.add_argument("--img_size_w", type=int, default=1024)
@@ -266,13 +271,15 @@ def main():
         open(out_path, "w").close()
     f = open(out_path, "a")
 
-    for path in glob.glob(os.path.expanduser(str(args.input[0]))):
+    for path in sorted(glob.glob(os.path.expanduser(str(args.input[0])))):
         img = Image.open(path).convert("RGB")
         img_np = np.array(img)
         img_uint8 = torch.from_numpy(img_np).permute(2, 0, 1).contiguous()
 
         scores = infer_scores_semantic(model, img_uint8)
-        anomaly_map = anomaly_map_from_scores(scores, args.method)
+        anomaly_map = anomaly_map_from_scores(
+            scores, args.method, temperature=args.temperature
+        )
 
         ood_gts = load_gt_mask(path, pred_hw=anomaly_map.shape)
         if ood_gts is None:
@@ -294,6 +301,8 @@ def main():
             + dataset_name
             + "   method:"
             + str(args.method)
+            + "   temperature:"
+            + str(args.temperature)
             + "   no_valid_samples\n"
         )
         f.close()
@@ -320,6 +329,7 @@ def main():
     print(f"Model: EoMT")
     print(f"Dataset: {dataset_name}")
     print(f"Method: {args.method}")
+    print(f"Temperature: {args.temperature}")
     print(f"AUPRC score: {prc_auc*100.0}")
     print(f"FPR@TPR95: {fpr*100.0}")
 
@@ -328,6 +338,8 @@ def main():
         + dataset_name
         + "   method:"
         + str(args.method)
+        + "   temperature:"
+        + str(args.temperature)
         + "   AUPRC score:"
         + str(prc_auc * 100.0)
         + "   FPR@TPR95:"
