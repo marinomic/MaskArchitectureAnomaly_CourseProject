@@ -135,8 +135,6 @@ def load_gt_mask(path: str, pred_hw: Tuple[int, int]) -> np.ndarray:
         ood_gts = np.where((ood_gts == 2), 1, ood_gts)
     if ("LostAndFound" in pathGT) or ("LostFound" in pathGT) or ("FS_LostFound_full" in pathGT):
         unique_vals = set(np.unique(ood_gts).tolist())
-        # Some preprocessed Fishyscapes/Lost&Found masks are already binary:
-        # 0=in-distribution, 1=anomaly, 255=ignore. In that case, keep them as-is.
         if not unique_vals.issubset({0, 1, 255}):
             ood_gts = np.where((ood_gts == 0), 255, ood_gts)
             ood_gts = np.where((ood_gts == 1), 0, ood_gts)
@@ -197,8 +195,6 @@ def build_model(args) -> MaskClassificationSemantic:
     ckpt = load_checkpoint_state(args.ckpt)
     inferred = infer_model_hparams_from_ckpt(ckpt)
 
-    # Pass ckpt_path so ViT skips downloading external pretrained backbone weights.
-    # The full EoMT checkpoint is loaded below and provides the actual parameters.
     encoder = ViT(
         img_size=img_size, backbone_name=args.backbone_name, ckpt_path=args.ckpt
     )

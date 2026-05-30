@@ -74,7 +74,6 @@ def _should_check_val_fx(self: _TrainingEpochLoop, data_fetcher: _DataFetcher) -
                 self.batch_idx + 1
             ) % self.trainer.val_check_batch == 0
         else:
-            # added below to check val based on global steps instead of batches in case of iteration based val check and gradient accumulation
             is_val_check_batch = (
                 self.global_step
             ) % self.trainer.val_check_batch == 0 and not self._should_accumulate()

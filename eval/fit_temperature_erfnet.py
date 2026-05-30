@@ -69,13 +69,7 @@ target_transform_cityscapes = Compose(
 
 
 class SegmentationTemperatureScaler(nn.Module):
-    """
-    Segmentation adaptation of the official gpleiss/temperature_scaling code.
-
-    We keep the same optimization idea (single learnable temperature optimized
-    on validation NLL), but treat valid semantic segmentation pixels as
-    classification samples by flattening [N, C, H, W] -> [N*H*W, C].
-    """
+ 
 
     def __init__(self, init_temperature: float = 1.5):
         super().__init__()
@@ -177,7 +171,6 @@ def load_erfnet(args, device: torch.device) -> nn.Module:
 def sample_valid_pixels(
     logits: torch.Tensor, labels: torch.Tensor, max_pixels_per_image: int
 ) -> tuple[torch.Tensor, torch.Tensor]:
-    # logits: [N, C, H, W], labels: [N, 1, H, W]
     logits = logits.permute(0, 2, 3, 1).reshape(-1, logits.shape[1])
     labels = labels.squeeze(1).reshape(-1)
     valid_mask = labels != IGNORE_INDEX
