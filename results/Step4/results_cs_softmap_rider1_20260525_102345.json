@@ -1,0 +1,327 @@
+{
+  "timestamp": "20260525_102345",
+  "config": {
+    "coco_mode": "cs_softmap",
+    "use_rider_recovery": true,
+    "common_class_ids": [
+      0,
+      1,
+      2,
+      3,
+      4,
+      6,
+      8,
+      9,
+      10,
+      11,
+      13,
+      14,
+      15,
+      17,
+      18
+    ],
+    "n_images_evaluated": 500
+  },
+  "final_miou": {
+    "cs_trained": 82.17031359672546,
+    "coco_fair": 0.0,
+    "coco_oracle": 0.0,
+    "coco_common": 0.0
+  },
+  "per_class_iou_pct": {
+    "road": {
+      "cs_trained": 98.43077063560486,
+      "coco_fair": 0.0,
+      "coco_oracle": 0.0,
+      "in_common": true,
+      "pixel_support": 345264442,
+      "pixel_support_pct": 37.65076125962385
+    },
+    "sidewalk": {
+      "cs_trained": 87.56916522979736,
+      "coco_fair": 0.0,
+      "coco_oracle": 0.0,
+      "in_common": true,
+      "pixel_support": 49568652,
+      "pixel_support_pct": 5.405414677522385
+    },
+    "building": {
+      "cs_trained": 94.22518610954285,
+      "coco_fair": 0.0,
+      "coco_oracle": 0.0,
+      "in_common": true,
+      "pixel_support": 201005428,
+      "pixel_support_pct": 21.91945205152783
+    },
+    "wall": {
+      "cs_trained": 66.81302785873413,
+      "coco_fair": 0.0,
+      "coco_oracle": 0.0,
+      "in_common": true,
+      "pixel_support": 6718315,
+      "pixel_support_pct": 0.7326259045579614
+    },
+    "fence": {
+      "cs_trained": 66.50131940841675,
+      "coco_fair": 0.0,
+      "coco_oracle": 0.0,
+      "in_common": true,
+      "pixel_support": 7521741,
+      "pixel_support_pct": 0.8202387509331887
+    },
+    "pole": {
+      "cs_trained": 71.38731479644775,
+      "coco_fair": 0.0,
+      "coco_oracle": 0.0,
+      "in_common": false,
+      "pixel_support": 13565658,
+      "pixel_support_pct": 1.4793221906346972
+    },
+    "tlight": {
+      "cs_trained": 75.4273772239685,
+      "coco_fair": 0.0,
+      "coco_oracle": 0.0,
+      "in_common": true,
+      "pixel_support": 1808393,
+      "pixel_support_pct": 0.19720354842267526
+    },
+    "tsign": {
+      "cs_trained": 82.72563219070435,
+      "coco_fair": 0.0,
+      "coco_oracle": 0.0,
+      "in_common": false,
+      "pixel_support": 6098373,
+      "pixel_support_pct": 0.6650218150617899
+    },
+    "vegetation": {
+      "cs_trained": 93.1810736656189,
+      "coco_fair": 0.0,
+      "coco_oracle": 0.0,
+      "in_common": true,
+      "pixel_support": 158868008,
+      "pixel_support_pct": 17.3244062039844
+    },
+    "terrain": {
+      "cs_trained": 67.78013706207275,
+      "coco_fair": 0.0,
+      "coco_oracle": 0.0,
+      "in_common": true,
+      "pixel_support": 7625026,
+      "pixel_support_pct": 0.8315018826190755
+    },
+    "sky": {
+      "cs_trained": 95.58600783348083,
+      "coco_fair": 0.0,
+      "coco_oracle": 0.0,
+      "in_common": true,
+      "pixel_support": 30765347,
+      "pixel_support_pct": 3.354932029074934
+    },
+    "person": {
+      "cs_trained": 85.68781018257141,
+      "coco_fair": 0.0,
+      "coco_oracle": 0.0,
+      "in_common": true,
+      "pixel_support": 11913424,
+      "pixel_support_pct": 1.2991476336525642
+    },
+    "rider": {
+      "cs_trained": 71.77444696426392,
+      "coco_fair": 0.0,
+      "coco_oracle": 0.0,
+      "in_common": false,
+      "pixel_support": 1975596,
+      "pixel_support_pct": 0.21543687763093727
+    },
+    "car": {
+      "cs_trained": 95.70029377937317,
+      "coco_fair": 0.0,
+      "coco_oracle": 0.0,
+      "in_common": true,
+      "pixel_support": 59731217,
+      "pixel_support_pct": 6.513632791105044
+    },
+    "truck": {
+      "cs_trained": 84.76614952087402,
+      "coco_fair": 0.0,
+      "coco_oracle": 0.0,
+      "in_common": true,
+      "pixel_support": 2760211,
+      "pixel_support_pct": 0.30099840222523583
+    },
+    "bus": {
+      "cs_trained": 90.25167226791382,
+      "coco_fair": 0.0,
+      "coco_oracle": 0.0,
+      "in_common": true,
+      "pixel_support": 3563120,
+      "pixel_support_pct": 0.3885548702388268
+    },
+    "train": {
+      "cs_trained": 77.28245854377747,
+      "coco_fair": 0.0,
+      "coco_oracle": 0.0,
+      "in_common": false,
+      "pixel_support": 1031648,
+      "pixel_support_pct": 0.11250023989429073
+    },
+    "motorcycle": {
+      "cs_trained": 74.77291226387024,
+      "coco_fair": 0.0,
+      "coco_oracle": 0.0,
+      "in_common": true,
+      "pixel_support": 729415,
+      "pixel_support_pct": 0.07954201673680758
+    },
+    "bicycle": {
+      "cs_trained": 81.37311339378357,
+      "coco_fair": 0.0,
+      "coco_oracle": 0.0,
+      "in_common": true,
+      "pixel_support": 6504475,
+      "pixel_support_pct": 0.7093068545535073
+    }
+  },
+  "miou_progression": [
+    {
+      "n_images": 25,
+      "miou_cs": 82.65113234519958,
+      "miou_fair": 0.0,
+      "miou_oracle": 0.0,
+      "miou_common": 0.0
+    },
+    {
+      "n_images": 50,
+      "miou_cs": 80.51022291183472,
+      "miou_fair": 0.0,
+      "miou_oracle": 0.0,
+      "miou_common": 0.0
+    },
+    {
+      "n_images": 75,
+      "miou_cs": 80.80498576164246,
+      "miou_fair": 0.0,
+      "miou_oracle": 0.0,
+      "miou_common": 0.0
+    },
+    {
+      "n_images": 100,
+      "miou_cs": 81.3168466091156,
+      "miou_fair": 0.0,
+      "miou_oracle": 0.0,
+      "miou_common": 0.0
+    },
+    {
+      "n_images": 125,
+      "miou_cs": 81.17180466651917,
+      "miou_fair": 0.0,
+      "miou_oracle": 0.0,
+      "miou_common": 0.0
+    },
+    {
+      "n_images": 150,
+      "miou_cs": 81.46830797195435,
+      "miou_fair": 0.0,
+      "miou_oracle": 0.0,
+      "miou_common": 0.0
+    },
+    {
+      "n_images": 175,
+      "miou_cs": 81.29417300224304,
+      "miou_fair": 0.0,
+      "miou_oracle": 0.0,
+      "miou_common": 0.0
+    },
+    {
+      "n_images": 200,
+      "miou_cs": 81.36821389198303,
+      "miou_fair": 0.0,
+      "miou_oracle": 0.0,
+      "miou_common": 0.0
+    },
+    {
+      "n_images": 225,
+      "miou_cs": 81.35074973106384,
+      "miou_fair": 0.0,
+      "miou_oracle": 0.0,
+      "miou_common": 0.0
+    },
+    {
+      "n_images": 250,
+      "miou_cs": 81.1343789100647,
+      "miou_fair": 0.0,
+      "miou_oracle": 0.0,
+      "miou_common": 0.0
+    },
+    {
+      "n_images": 275,
+      "miou_cs": 81.4663290977478,
+      "miou_fair": 0.0,
+      "miou_oracle": 0.0,
+      "miou_common": 0.0
+    },
+    {
+      "n_images": 300,
+      "miou_cs": 81.55881762504578,
+      "miou_fair": 0.0,
+      "miou_oracle": 0.0,
+      "miou_common": 0.0
+    },
+    {
+      "n_images": 325,
+      "miou_cs": 81.2258243560791,
+      "miou_fair": 0.0,
+      "miou_oracle": 0.0,
+      "miou_common": 0.0
+    },
+    {
+      "n_images": 350,
+      "miou_cs": 81.46079778671265,
+      "miou_fair": 0.0,
+      "miou_oracle": 0.0,
+      "miou_common": 0.0
+    },
+    {
+      "n_images": 375,
+      "miou_cs": 81.62028789520264,
+      "miou_fair": 0.0,
+      "miou_oracle": 0.0,
+      "miou_common": 0.0
+    },
+    {
+      "n_images": 400,
+      "miou_cs": 81.78385496139526,
+      "miou_fair": 0.0,
+      "miou_oracle": 0.0,
+      "miou_common": 0.0
+    },
+    {
+      "n_images": 425,
+      "miou_cs": 81.81755542755127,
+      "miou_fair": 0.0,
+      "miou_oracle": 0.0,
+      "miou_common": 0.0
+    },
+    {
+      "n_images": 450,
+      "miou_cs": 81.83100819587708,
+      "miou_fair": 0.0,
+      "miou_oracle": 0.0,
+      "miou_common": 0.0
+    },
+    {
+      "n_images": 475,
+      "miou_cs": 82.00967311859131,
+      "miou_fair": 0.0,
+      "miou_oracle": 0.0,
+      "miou_common": 0.0
+    },
+    {
+      "n_images": 500,
+      "miou_cs": 82.17031359672546,
+      "miou_fair": 0.0,
+      "miou_oracle": 0.0,
+      "miou_common": 0.0
+    }
+  ]
+}
