@@ -69,7 +69,7 @@ def main(args):
         torch.load(
             weightspath,
             map_location=lambda storage, loc: storage,
-            weights_only=False,
+            weights_only=False,  # needed for pre-2.0 checkpoints
         ),
     )
     print ("Model and weights LOADED successfully")

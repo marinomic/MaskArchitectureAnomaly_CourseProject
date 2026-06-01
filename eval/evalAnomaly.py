@@ -38,6 +38,8 @@ target_transform = Compose(
 )
 
 def average_precision_score(y_true: np.ndarray, y_score: np.ndarray) -> float:
+    # AUPRC, reimplemented without sklearn. Sorts by score, accumulates TP/FP,
+    # deduplicates by threshold, then integrates with a step function.
     y_true = np.asarray(y_true).astype(np.int64)
     y_score = np.asarray(y_score).astype(np.float64)
     if y_true.ndim != 1 or y_score.ndim != 1 or y_true.shape[0] != y_score.shape[0]:
@@ -56,17 +58,19 @@ def average_precision_score(y_true: np.ndarray, y_score: np.ndarray) -> float:
     precision = tp / np.maximum(tp + fp, 1)
     recall = tp / pos
 
+    # drop duplicate recall values caused by tied scores
     distinct_mask = np.r_[True, y_score[order][1:] != y_score[order][:-1]]
     precision = precision[distinct_mask]
     recall = recall[distinct_mask]
 
-    recall = np.r_[0.0, recall]
+    recall = np.r_[0.0, recall]  # anchor the left end of the curve
     precision = np.r_[precision[0], precision]
 
     return float(np.sum((recall[1:] - recall[:-1]) * precision[1:]))
 
 
 def fpr_at_95_tpr(y_score: np.ndarray, y_true: np.ndarray) -> float:
+    # Minimum FPR at the operating point where TPR >= 95%. Reimplemented without sklearn.
     y_true = np.asarray(y_true).astype(np.int64)
     y_score = np.asarray(y_score).astype(np.float64)
     if y_true.ndim != 1 or y_score.ndim != 1 or y_true.shape[0] != y_score.shape[0]:
@@ -92,6 +96,7 @@ def fpr_at_95_tpr(y_score: np.ndarray, y_true: np.ndarray) -> float:
     return float(np.min(fpr[idx]))
 
 def infer_dataset_name(input_pattern: str) -> str:
+    # Extracts the dataset folder name from a glob path for labelling results.
     norm = input_pattern.replace("\\", "/")
     parts = [p for p in norm.split("/") if p]
     if "Validation_Dataset" in parts:
@@ -106,6 +111,9 @@ def infer_dataset_name(input_pattern: str) -> str:
 def anomaly_score_from_logits(
     logits: torch.Tensor, method: str, temperature: float = 1.0
 ) -> np.ndarray:
+    # Converts (1, C, H, W) logits to a (H, W) anomaly score map.
+    # msp: 1 - max softmax prob. max_logit: -max logit. max_entropy: Shannon entropy.
+    # rba: -sum(tanh(logits)). Temperature applies only to softmax-based methods.
     temperature = max(float(temperature), 1e-8)
     scaled_logits = logits / temperature
 
@@ -145,7 +153,7 @@ def main():
     parser.add_argument('--batch-size', type=int, default=1)
     parser.add_argument('--cpu', action='store_true')
     parser.add_argument('--method', default="msp", choices=["msp", "max_logit", "max_entropy", "rba"])
-    parser.add_argument('--temperature', type=float, default=1.0)
+    parser.add_argument('--temperature', type=float, default=1.0)  # 1.0 = no scaling
     args = parser.parse_args()
     if isinstance(args.input, str):
         args.input = [args.input]
@@ -190,7 +198,7 @@ def main():
         torch.load(
             weightspath,
             map_location=lambda storage, loc: storage,
-            weights_only=False,
+            weights_only=False,  # needed for pre-2.0 checkpoints that contain non-tensor objects
         ),
     )
     print ("Model and weights LOADED successfully")
@@ -220,6 +228,7 @@ def main():
             ood_gts = np.where((ood_gts==2), 1, ood_gts)
         if ("LostAndFound" in pathGT) or ("LostFound" in pathGT) or ("FS_LostFound_full" in pathGT):
             unique_vals = set(np.unique(ood_gts).tolist())
+            # only remap if the mask still contains raw instance IDs, not the already-normalized {0,1,255}
             if not unique_vals.issubset({0, 1, 255}):
                 ood_gts = np.where((ood_gts==0), 255, ood_gts)
                 ood_gts = np.where((ood_gts==1), 0, ood_gts)

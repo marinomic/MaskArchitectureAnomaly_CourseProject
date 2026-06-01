@@ -92,7 +92,7 @@ def main(args):
 
     model = load_my_state_dict(
         model,
-        torch.load(weightspath, weights_only=False),
+        torch.load(weightspath, weights_only=False),  # needed for pre-2.0 checkpoints
     )
     print ("Model and weights LOADED successfully")
 

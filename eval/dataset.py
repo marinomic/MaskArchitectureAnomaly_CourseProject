@@ -18,6 +18,7 @@ def is_image(filename):
     return any(filename.endswith(ext) for ext in EXTENSIONS)
 
 def is_label(filename, suffix="_labelTrainIds.png"):
+    # suffix can be swapped to "_labelIds.png" when raw class IDs are needed
     return filename.endswith(suffix)
 
 def image_path(root, basename, extension):
@@ -69,7 +70,7 @@ class cityscapes(Dataset):
         input_transform=None,
         target_transform=None,
         subset='val',
-        label_suffix="_labelTrainIds.png",
+        label_suffix="_labelTrainIds.png",  # use "_labelIds.png" for temperature fitting
     ):
 
         self.images_root = os.path.join(root, 'leftImg8bit/' + subset)
@@ -100,6 +101,7 @@ class cityscapes(Dataset):
 
         #print(filename)
 
+        # filenames from os.walk are already absolute paths
         with open(filename, 'rb') as f:
             image = load_image(f).convert('RGB')
         with open(filenameGt, 'rb') as f:

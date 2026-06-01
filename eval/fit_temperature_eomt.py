@@ -1,3 +1,6 @@
+# Same workflow as fit_temperature_erfnet.py but adapted for EoMT's tiling pipeline,
+# which expects uint8 inputs and returns per-pixel logits in (C, H, W) format.
+
 import json
 import os
 import os.path as osp
@@ -30,6 +33,9 @@ target_transform_cityscapes = Compose(
 def sample_valid_pixels(
     logits: torch.Tensor, labels: torch.Tensor, max_pixels_per_image: int
 ) -> tuple[torch.Tensor, torch.Tensor]:
+    # EoMT returns (C, H, W) with no batch dim, so the reshape differs from the
+    # ERFNet version in fit_temperature_erfnet.py which receives (B, C, H, W).
+    # Sub-samples to max_pixels_per_image to avoid OOM over the full validation set.
     logits = logits.permute(1, 2, 0).reshape(-1, logits.shape[0])
     labels = labels.squeeze(0).reshape(-1)
     valid_mask = labels != IGNORE_INDEX
@@ -48,6 +54,9 @@ def sample_valid_pixels(
 
 
 def collect_validation_logits(args, model: torch.nn.Module):
+    # EoMT's preprocessing expects uint8 pixel values, but ToTensor gives floats in [0,1].
+    # We convert back to uint8 before each inference call. Batch size is forced to 1
+    # because the tiling pipeline processes one image at a time.
     if not osp.exists(args.datadir):
         raise FileNotFoundError(f"datadir does not exist: {args.datadir}")
 
@@ -106,7 +115,7 @@ def main():
     parser.add_argument("--cpu", action="store_true")
     parser.add_argument("--init-temperature", type=float, default=1.5)
     parser.add_argument("--max-pixels-per-image", type=int, default=4096)
-    parser.add_argument("--save", default="")
+    parser.add_argument("--save", default="")  # auto-generated from ckpt name if empty
     parser.add_argument("--img_size_h", type=int, default=640)
     parser.add_argument("--img_size_w", type=int, default=640)
     parser.add_argument("--backbone_name", default="vit_base_patch14_reg4_dinov2")

@@ -1,3 +1,7 @@
+# Fits a temperature scalar T on the Cityscapes validation set for ERFNet.
+# Dividing logits by T before softmax improves calibration and MSP-based anomaly detection.
+# The fitted T is saved to JSON so it can be passed to evalAnomaly.py via --temperature.
+
 import json
 import os
 import os.path as osp
@@ -29,10 +33,14 @@ np.random.seed(seed)
 torch.manual_seed(seed)
 
 NUM_CLASSES = 20
-IGNORE_INDEX = 19
+IGNORE_INDEX = 19  # ERFNet's unlabelled/ignore class
 
 
 class LabelIdsToTrainIds:
+    # Cityscapes annotations use non-contiguous raw IDs (0-33+). This converts them
+    # to the 19 contiguous train IDs (0-18) that ERFNet was trained on, using a
+    # 256-entry lookup table built once from torchvision's class definitions.
+    # Everything that isn't a valid train class becomes IGNORE_INDEX.
     def __init__(self, ignore_index: int = IGNORE_INDEX):
         mapping = np.full(256, 255, dtype=np.uint8)
         for cls in Cityscapes.classes:
@@ -69,8 +77,9 @@ target_transform_cityscapes = Compose(
 
 
 class SegmentationTemperatureScaler(nn.Module):
- 
-
+    # Learns a single scalar T that divides all class logits before softmax.
+    # T > 1 flattens the distribution (less confident), which typically improves
+    # calibration for over-confident models. Optimised with L-BFGS on NLL.
     def __init__(self, init_temperature: float = 1.5):
         super().__init__()
         self.temperature = nn.Parameter(torch.ones(1) * float(init_temperature))
@@ -143,6 +152,7 @@ def load_erfnet(args, device: torch.device) -> nn.Module:
         model = model.to(device)
 
     def load_my_state_dict(model, state_dict):
+        # handles checkpoints saved with DataParallel (keys prefixed "module.")
         own_state = model.state_dict()
         for name, param in state_dict.items():
             if name not in own_state:
@@ -160,7 +170,7 @@ def load_erfnet(args, device: torch.device) -> nn.Module:
         torch.load(
             weightspath,
             map_location=lambda storage, _: storage,
-            weights_only=False,
+            weights_only=False,  # needed for pre-2.0 checkpoints
         ),
     )
     print("Model and weights LOADED successfully")
@@ -171,6 +181,8 @@ def load_erfnet(args, device: torch.device) -> nn.Module:
 def sample_valid_pixels(
     logits: torch.Tensor, labels: torch.Tensor, max_pixels_per_image: int
 ) -> tuple[torch.Tensor, torch.Tensor]:
+    # Flattens (B, C, H, W) logits and discards ignored pixels.
+    # Sub-samples to max_pixels_per_image to avoid OOM over the full validation set.
     logits = logits.permute(0, 2, 3, 1).reshape(-1, logits.shape[1])
     labels = labels.squeeze(1).reshape(-1)
     valid_mask = labels != IGNORE_INDEX
@@ -189,6 +201,8 @@ def sample_valid_pixels(
 
 
 def collect_validation_logits(args, model: nn.Module, device: torch.device):
+    # Uses raw label IDs ("_labelIds.png") so LabelIdsToTrainIds can apply the
+    # official Cityscapes train-ID mapping during loading.
     if not osp.exists(args.datadir):
         raise FileNotFoundError(f"datadir does not exist: {args.datadir}")
 

@@ -1,3 +1,7 @@
+# Anomaly detection evaluation for EoMT. Computes AUPRC and FPR@TPR95 on OOD benchmarks.
+# Supports four scoring methods: msp, max_logit, max_entropy, rba.
+# Results are appended to results_eomt.txt.
+
 import glob
 import os
 import os.path as osp
@@ -20,6 +24,8 @@ from eomt.training.mask_classification_semantic import MaskClassificationSemanti
 
 
 def average_precision_score(y_true: np.ndarray, y_score: np.ndarray) -> float:
+    # AUPRC, reimplemented without sklearn. Sorts by score, accumulates TP/FP,
+    # deduplicates by threshold, then integrates with a step function.
     y_true = np.asarray(y_true).astype(np.int64)
     y_score = np.asarray(y_score).astype(np.float64)
     if y_true.ndim != 1 or y_score.ndim != 1 or y_true.shape[0] != y_score.shape[0]:
@@ -38,17 +44,19 @@ def average_precision_score(y_true: np.ndarray, y_score: np.ndarray) -> float:
     precision = tp / np.maximum(tp + fp, 1)
     recall = tp / pos
 
+    # drop duplicate recall values caused by tied scores
     distinct_mask = np.r_[True, y_score[order][1:] != y_score[order][:-1]]
     precision = precision[distinct_mask]
     recall = recall[distinct_mask]
 
-    recall = np.r_[0.0, recall]
+    recall = np.r_[0.0, recall]  # anchor the left end of the curve
     precision = np.r_[precision[0], precision]
 
     return float(np.sum((recall[1:] - recall[:-1]) * precision[1:]))
 
 
 def fpr_at_95_tpr(y_score: np.ndarray, y_true: np.ndarray) -> float:
+    # Minimum FPR at the operating point where TPR >= 95%. Reimplemented without sklearn.
     y_true = np.asarray(y_true).astype(np.int64)
     y_score = np.asarray(y_score).astype(np.float64)
     if y_true.ndim != 1 or y_score.ndim != 1 or y_true.shape[0] != y_score.shape[0]:
@@ -78,6 +86,10 @@ def fpr_at_95_tpr(y_score: np.ndarray, y_true: np.ndarray) -> float:
 def infer_scores_semantic(
     model: MaskClassificationSemantic, img_uint8_chw: torch.Tensor
 ) -> torch.Tensor:
+    # EoMT uses a tiling pipeline: the image is split into crops, each crop is
+    # processed by the transformer, and the results are stitched back together.
+    # We take only the last decoder layer (most refined) and up-sample mask logits
+    # before combining them with class logits into per-pixel scores.
     imgs = [img_uint8_chw.to(next(model.parameters()).device)]
     img_sizes = [img_uint8_chw.shape[-2:]]
 
@@ -96,6 +108,10 @@ def infer_scores_semantic(
 def anomaly_map_from_scores(
     scores: torch.Tensor, method: str, temperature: float = 1.0
 ) -> np.ndarray:
+    # Converts (C, H, W) per-pixel logits to a (H, W) anomaly map.
+    # Note: class axis is dim=0 here (unlike evalAnomaly.py which uses dim=1).
+    # msp: 1 - max softmax prob. max_logit: -max logit. max_entropy: Shannon entropy.
+    # rba: -sum(tanh(logits)). Temperature applies only to softmax-based methods.
     raw_scores = scores.float()
     temperature = max(float(temperature), 1e-8)
     scaled_scores = raw_scores / temperature
@@ -115,6 +131,9 @@ def anomaly_map_from_scores(
 
 
 def load_gt_mask(path: str, pred_hw: Tuple[int, int]) -> np.ndarray:
+    # Derives the GT mask path from the image path, then applies dataset-specific
+    # label remapping so all masks end up as {0=in-dist, 1=anomaly, 255=ignore}.
+    # Returns None when the mask file is missing (image is silently skipped).
     pathGT = path.replace("images", "labels_masks")
     if "RoadObsticle21" in pathGT:
         pathGT = pathGT.replace("webp", "png")
@@ -135,6 +154,7 @@ def load_gt_mask(path: str, pred_hw: Tuple[int, int]) -> np.ndarray:
         ood_gts = np.where((ood_gts == 2), 1, ood_gts)
     if ("LostAndFound" in pathGT) or ("LostFound" in pathGT) or ("FS_LostFound_full" in pathGT):
         unique_vals = set(np.unique(ood_gts).tolist())
+        # only remap if the mask still contains raw instance IDs, not the already-normalized {0,1,255}
         if not unique_vals.issubset({0, 1, 255}):
             ood_gts = np.where((ood_gts == 0), 255, ood_gts)
             ood_gts = np.where((ood_gts == 1), 0, ood_gts)
@@ -149,6 +169,7 @@ def load_gt_mask(path: str, pred_hw: Tuple[int, int]) -> np.ndarray:
 
 
 def infer_dataset_name(input_pattern: str) -> str:
+    # Extracts the dataset folder name from a glob path for labelling results.
     norm = input_pattern.replace("\\", "/")
     parts = [p for p in norm.split("/") if p]
     if "Validation_Dataset" in parts:
@@ -161,6 +182,8 @@ def infer_dataset_name(input_pattern: str) -> str:
 
 
 def load_checkpoint_state(ckpt_path: str) -> dict[str, torch.Tensor]:
+    # Handles both raw state dicts and Lightning checkpoints (nested under "state_dict").
+    # criterion.empty_weight is a loss buffer that causes strict-load mismatches, so we drop it.
     ckpt = torch.load(ckpt_path, map_location="cpu", weights_only=True)
     if "state_dict" in ckpt:
         ckpt = ckpt["state_dict"]
@@ -168,6 +191,9 @@ def load_checkpoint_state(ckpt_path: str) -> dict[str, torch.Tensor]:
 
 
 def infer_model_hparams_from_ckpt(ckpt: dict[str, torch.Tensor]) -> dict[str, int]:
+    # Reads num_q, num_classes, and num_blocks directly from the checkpoint weights
+    # so the caller doesn't have to pass them manually on the command line.
+    # class_head has num_classes+1 rows because the last row is the "no-object" class.
     q_key = "network.q.weight"
     class_key = "network.class_head.weight"
     blocks_key = "network.attn_mask_probs"
@@ -191,6 +217,9 @@ def infer_model_hparams_from_ckpt(ckpt: dict[str, torch.Tensor]) -> dict[str, in
 
 
 def build_model(args) -> MaskClassificationSemantic:
+    # Builds EoMT from the checkpoint, inferring architecture params automatically.
+    # If the checkpoint was trained at a different resolution, pos_embed is bicubically
+    # interpolated to match the target grid size before loading the state dict.
     img_size = (args.img_size_h, args.img_size_w)
     ckpt = load_checkpoint_state(args.ckpt)
     inferred = infer_model_hparams_from_ckpt(ckpt)
@@ -230,6 +259,7 @@ def build_model(args) -> MaskClassificationSemantic:
             if old_h * old_w != old_n:
                 raise ValueError(f"Unexpected pos_embed length {old_n} (not square)")
 
+            # reshape to (1, D, H, W), interpolate spatially, reshape back
             pos = pos.reshape(1, old_h, old_w, -1).permute(0, 3, 1, 2)
             pos = F.interpolate(
                 pos, size=target_grid, mode="bicubic", align_corners=False
@@ -247,7 +277,7 @@ def main():
     parser.add_argument("--ckpt", required=True)
     parser.add_argument("--method", default="msp", choices=["msp", "max_logit", "max_entropy", "rba"])
     parser.add_argument("--cpu", action="store_true")
-    parser.add_argument("--temperature", type=float, default=1.0)
+    parser.add_argument("--temperature", type=float, default=1.0)  # 1.0 = no scaling
 
     parser.add_argument("--img_size_h", type=int, default=1024)
     parser.add_argument("--img_size_w", type=int, default=1024)
@@ -270,6 +300,7 @@ def main():
     for path in sorted(glob.glob(os.path.expanduser(str(args.input[0])))):
         img = Image.open(path).convert("RGB")
         img_np = np.array(img)
+        # EoMT expects uint8 tensors in (C, H, W) format
         img_uint8 = torch.from_numpy(img_np).permute(2, 0, 1).contiguous()
 
         scores = infer_scores_semantic(model, img_uint8)
