@@ -1,0 +1,67 @@
+========================================================================
+ STEP 4 - EoMT-CITYSCAPES vs EoMT-COCO COMPARISON
+ Task: semantic segmentation | Dataset: Cityscapes val (500 images)
+ Evaluation resolution: 640x640 (same for both models)
+========================================================================
+
+THE COMPARISON PROBLEM
+  The two models predict in different label spaces (COCO: 133 panoptic
+  classes; Cityscapes: 19 semantic classes). For a fair comparison:
+   - both models are instantiated at the SAME resolution (640x640);
+   - the COCO predictions are remapped onto the 19 Cityscapes classes
+     through a hand-defined mapping (COCO -> Cityscapes);
+   - the SAME evaluation pipeline is used (same mIoU, same loader).
+
+  Three readings of the COCO model mIoU are reported:
+   - FAIR   : evaluated over all 19 Cityscapes classes
+   - COMMON : only over the classes that COCO can actually map
+   - ORACLE : upper bound with an ideal mapping assignment
+
+------------------------------------------------------------------------
+ OVERALL mIoU (Cityscapes val)
+------------------------------------------------------------------------
+  EoMT-Cityscapes (provided checkpoint) .  82.15 %
+  EoMT-COCO  (FAIR, 19 classes) .........  51.13 %
+  EoMT-COCO  (COMMON, mappable classes) .  63.66 %
+  EoMT-COCO  (ORACLE) ...................  51.50 %
+
+  Source: results/Step4/results_sem_logits_rider1_20260525_091308.json
+
+------------------------------------------------------------------------
+ PER-CLASS IoU (%)
+------------------------------------------------------------------------
+  Class            EoMT-CS     EoMT-COCO (FAIR)
+  road               98.43          93.94
+  sidewalk           87.55          64.09
+  building           94.19          83.54
+  wall               67.00          48.28
+  fence              66.40          42.12
+  pole               71.23           0.05
+  traffic light      75.32          46.95
+  traffic sign       82.62           4.12
+  vegetation         93.13          85.19
+  terrain            67.75          54.09
+  sky                95.57          87.84
+  person             85.61          61.92
+  rider              71.84          12.45
+  car                95.72          80.98
+  truck              84.92          28.87
+  bus                90.39          60.42
+  train              77.41           0.00
+  motorcycle         74.63          53.26
+  bicycle            81.11          63.36
+  --------------------------------------------
+  mIoU               82.15          51.13
+
+OBSERVATIONS
+  - The native Cityscapes model dominates on every class: expected, since
+    it was trained exactly on that domain and label space.
+  - The COCO collapse on classes like pole/traffic sign/train is largely
+    STRUCTURAL: these classes have no clean counterpart in COCO panoptic,
+    so the mapping cannot recover them.
+
+NOTE
+  The per-class IoU values above are taken directly from the JSON. They
+  match the per_class_iou_sem_logits_rider1_20260525_091308.csv to two
+  decimal places. The COMMON and ORACLE mIoU are now filled in from the
+  same JSON run.

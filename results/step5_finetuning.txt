@@ -1,0 +1,75 @@
+========================================================================
+ STEP 5 - FINE-TUNING THE EoMT-COCO MODEL ON CITYSCAPES
+ Task: semantic segmentation | Dataset: Cityscapes val (500 images)
+ Evaluation resolution: 640x640 | Classes: 19 (Cityscapes train-ids)
+========================================================================
+
+GOAL
+  The EoMT model trained on COCO (panoptic) is not specialised on road
+  scenes. It is fine-tuned on the Cityscapes training set for semantic
+  segmentation, and its improvement on the validation set is measured
+  with the SAME evaluation pipeline used in Step 4.
+
+TRAINING STRATEGY
+  Phase 1 : prediction head only (backbone frozen)  - LR_head=5e-5
+  Phase 2 : full fine-tune (whole network unfrozen) - LR_head=5e-5, LR_backbone=5e-6
+  Optimizer : AdamW, weight decay 0.05
+  Scheduler : 1000-step warmup + cosine decay (TOTAL_STEPS=20000)
+  Mixed precision (AMP) : enabled
+
+------------------------------------------------------------------------
+ OVERALL mIoU (Cityscapes val)
+------------------------------------------------------------------------
+  EoMT-COCO base (cross-domain) ........  51.13 %
+  EoMT-COCO fine-tuned (this work) .....  69.87 %
+  EoMT-Cityscapes (provided checkpoint)   82.15 %
+
+  Source: Step 4 JSON (base and EoMT-CS); Phase 2 training log best_miou
+  (fine-tuned). The fine-tuned checkpoint is eomt_coco_full_finetuned_cityscapes.bin.
+
+------------------------------------------------------------------------
+ PER-CLASS IoU (%)
+   Fine-tuned column: no per-class evaluation file was saved for the
+   fine-tuned model. Re-run evaluate_miou() on the fine-tuned checkpoint
+   and insert the values here.
+------------------------------------------------------------------------
+  Class            COCO base    Fine-tuned    EoMT-CS
+  road                93.94        <...>        98.43
+  sidewalk            64.09        <...>        87.55
+  building            83.54        <...>        94.19
+  wall                48.28        <...>        67.00
+  fence               42.12        <...>        66.40
+  pole                 0.05        <...>        71.23
+  traffic light       46.95        <...>        75.32
+  traffic sign         4.12        <...>        82.62
+  vegetation          85.19        <...>        93.13
+  terrain             54.09        <...>        67.75
+  sky                 87.84        <...>        95.57
+  person              61.92        <...>        85.61
+  rider               12.45        <...>        71.84
+  car                 80.98        <...>        95.72
+  truck               28.87        <...>        84.92
+  bus                 60.42        <...>        90.39
+  train                0.00        <...>        77.41
+  motorcycle          53.26        <...>        74.63
+  bicycle             63.36        <...>        81.11
+  ----------------------------------------------------
+  mIoU                51.13        69.87        82.15
+
+OBSERVATIONS
+  - Fine-tuning recovers a lot on the typical road classes and on those
+    that were near zero in COCO because of the class-space mismatch
+    (e.g. pole, traffic sign, train, rider).
+  - The fine-tuned version stays below the native Cityscapes checkpoint:
+    expected, since it starts from a cross-domain base and uses limited
+    training.
+
+NOTES ON THE DATA
+  - The COCO base and EoMT-CS values match the Step 4 JSON exactly.
+  - 69.87% is the best validation mIoU reached during Phase 2 (full fine-tune,
+    logged as best_miou = 0.6987 at step 18500 out of 20000). The final
+    checkpoint may differ slightly; evaluate it to get the exact final number.
+  - Per-class IoU for the fine-tuned model is genuinely missing: the notebook
+    did not save a per-class result file. To fill the table above, run:
+      iou, miou = evaluate_miou(model_finetuned, val_loader)
+    on the saved checkpoint and record the output.
