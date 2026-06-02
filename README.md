@@ -37,7 +37,9 @@ The project has two intertwined goals:
 ├── README.md
 ├── notebooks/
 │   ├── Step4_EoMT_evaluation.ipynb       # EoMT-Cityscapes vs EoMT-COCO comparison (step 4)
-│   └── Step_5_Finetune_EoMT_COCO.ipynb   # fine-tuning the COCO model on Cityscapes (step 5)
+│   ├── Step_5_Finetune_EoMT_COCO.ipynb   # fine-tuning the COCO model on Cityscapes (step 5)
+│   ├── Step7_pixel_baselines.ipynb        # ERFNet anomaly baselines (step 7)
+│   └── step8_mask_baselines.ipynb         # EoMT anomaly baselines + temperature scaling (step 8)
 ├── eomt/                                 # EoMT library (cloned dependency)
 │   ├── checkpoints/
 │   │   ├── eomt_cityscapes.bin           # provided Cityscapes checkpoint
@@ -61,7 +63,11 @@ The project has two intertwined goals:
 │   ├── README.md                         # index of the quantitative results
 │   ├── step4_semantic_eval.txt           # mIoU of both models on Cityscapes val
 │   ├── step5_finetuning.txt              # COCO base / fine-tuned / EoMT-CS comparison
-│   └── step8_anomaly_baselines.txt       # AuPRC / FPR95 tables of the post-hoc methods
+│   ├── step7_pixel_baselines.txt         # ERFNet post-hoc results (MSP / MaxLogit / MaxEntropy)
+│   ├── step8_mask_baselines.txt          # EoMT post-hoc results, all three checkpoints
+│   ├── step8_temperature_scaling.txt     # MSP at several temperatures per EoMT checkpoint
+│   ├── step8_anomaly_baselines.txt       # earlier partial summary (superseded by the two above)
+│   └── temperature_scaling_report.pdf    # formatted PDF of the temperature-scaling analysis
 ├── trained_models/
 │   ├── erfnet_pretrained.pth             # pretrained ERFNet weights (Cityscapes)
 │   └── erfnet_encoder_pretrained.pth.tar # pretrained ERFNet encoder
@@ -90,9 +96,9 @@ The numbering follows the project assignment.
 
 **Step 6 - Anomaly segmentation: task and post-hoc methods.** Study of the problem, of the benchmark datasets (SegmentMeIfYouCan, Fishyscapes) and of the main post-hoc methods (RbA, Scaling OoD Detection).
 
-**Step 7 - Pixel-based baseline (ERFNet).** TO COMPLETE. Evaluation of ERFNet with MSP, Max Logit and Max Entropy on the anomaly-segmentation validation datasets.
+**Step 7 - Pixel-based baseline (ERFNet).** In `Step7_pixel_baselines.ipynb` we run MSP, Max Logit and Max Entropy on ERFNet across all five anomaly validation sets. Forward pass and anomaly-score computation are decoupled: the logits are saved once, then the three methods are applied on them. Temperature scaling is also fitted on the Cityscapes validation set and applied to MSP. Results are in `results/step7_pixel_baselines.txt`.
 
-**Step 8 - Mask-based baseline (EoMT).** TO COMPLETE. Evaluation of EoMT on the same datasets, adding RbA (applicable only to mask architectures) and trying temperature scaling for confidence calibration. The evaluation covers the three EoMT checkpoints: COCO, Cityscapes and the fine-tuned version.
+**Step 8 - Mask-based baseline (EoMT).** In `step8_mask_baselines.ipynb` we evaluate EoMT with the same three methods plus RbA (a method specific to mask architectures, not applicable to ERFNet) on all five anomaly datasets. We run all three checkpoints: COCO, Cityscapes and the fine-tuned one. Temperature scaling is fitted separately for each checkpoint and the effect on MSP is measured at several fixed temperatures. Results are in `results/step8_mask_baselines.txt` and `results/step8_temperature_scaling.txt`; a formatted summary is in `results/temperature_scaling_report.pdf`.
 
 ---
 
@@ -108,15 +114,23 @@ The notebooks are meant to run on Google Colab with a GPU (e.g. T4). In short:
 
 ## Main results
 
-| Model | Training | mIoU on Cityscapes val |
+**Semantic segmentation — Cityscapes val (500 images, mIoU)**
+
+| Model | Training | mIoU |
 |---|---|---|
-| EoMT-COCO (base, cross-domain) | COCO panoptic | ~51.1% |
-| EoMT-COCO **fine-tuned** | + Cityscapes semantic | ~69.9% |
-| EoMT-Cityscapes (provided) | Cityscapes semantic | ~82.2% |
+| EoMT-COCO (base, cross-domain) | COCO panoptic | 51.13% |
+| EoMT-COCO fine-tuned (this work) | + Cityscapes semantic | 69.87% |
+| EoMT-Cityscapes (provided checkpoint) | Cityscapes semantic | 82.15% |
 
-Per-class details and the anomaly-segmentation baseline results (AuPRC, FPR95 on the SMIYC, Fishyscapes and Road Anomaly benchmarks) are in the [`results/`](results/) folder.
+**Anomaly segmentation — selected results (Max Logit, AuPRC %)**
 
-> Note: the numbers above should be verified against the real result files produced by your runs. See the notes inside the `results/` files.
+| Model | SMIYC RA-21 | SMIYC RO-21 | FS L&F | FS Static | Road Anomaly |
+|---|---|---|---|---|---|
+| ERFNet (pixel-based) | 38.31 | 4.62 | 3.29 | 9.49 | 15.58 |
+| EoMT-Cityscapes (mask-based) | 65.81 | 89.72 | 17.60 | 62.56 | 66.55 |
+| EoMT fine-tuned (mask-based) | 66.18 | 89.35 | 23.98 | 68.29 | 77.81 |
+
+Full per-method, per-checkpoint tables and temperature-scaling analysis are in the [`results/`](results/) folder.
 
 ---
 
