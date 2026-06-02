@@ -4,13 +4,8 @@
  Metrics   : AuPRC (higher is better), FPR95 (lower is better)
 ========================================================================
 
-HOW THESE NUMBERS WERE OBTAINED
-  Temperature scaling divides the logits by a scalar T before the softmax:
-  p = softmax(f / T). The optimal T per checkpoint is fitted by minimising
-  the Negative Log-Likelihood (NLL) on the Cityscapes validation set, then
-  MSP is re-evaluated at a few fixed temperatures and at the fitted "best t".
-  Pro tip used in the notebooks: the forward-pass logits are saved once, then
-  the temperatures are swept on the saved logits without re-running the model.
+ Optimal T fitted per checkpoint by minimising NLL on Cityscapes val.
+ Logits saved once; temperatures swept without re-running the model.
 
 ------------------------------------------------------------------------
  Cityscapes checkpoint  (fitted best t = 0.192934)
@@ -45,13 +40,7 @@ HOW THESE NUMBERS WERE OBTAINED
  MSP(t=1.1)      58.39  88.27   72.90   3.18    7.42  32.19   48.97  19.83   68.52  26.02
  MSP(best t)     58.36  88.30   72.85   3.18    7.40  32.19   48.91  19.84   68.48  26.03
 
-KEY TAKEAWAYS
-  - Calibration overfitting: the NLL-optimal temperature does NOT maximise
-    anomaly detection. On the Cityscapes checkpoint the fitted best t
-    (0.192934) is the weakest variant, while a fixed t = 1.1 is best.
-  - On the COCO checkpoint temperature has almost no effect: a severe domain
-    gap cannot be fixed by post-hoc logit scaling (FPR95 stays near 100).
-  - On the fine-tuned checkpoint raising t from 0.5 to 1.1 gives a large,
-    stepwise gain (e.g. FS Static AuPRC 20.51 -> 48.97). The fitted best t
-    (1.097883) is essentially 1.1, confirming that a mild over-smoothing of
-    over-confident softmax outputs helps OOD sensitivity.
+ On the Cityscapes ckpt the NLL-optimal T (0.19) is the weakest variant;
+ fixed t=1.1 is best for anomaly detection. On the fine-tuned ckpt, raising
+ T from 0.5 to 1.1 gives a large stepwise gain; best T (1.10) matches t=1.1
+ exactly. Temperature has almost no effect on the COCO checkpoint.

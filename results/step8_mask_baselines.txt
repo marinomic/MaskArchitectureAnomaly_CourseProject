@@ -4,24 +4,10 @@
  Metrics   : AuPRC (higher is better), FPR95 (lower is better)
 ========================================================================
 
-HOW THESE NUMBERS WERE OBTAINED
-  Model : EoMT (mask architecture, DINOv2 backbone). Evaluated on all three
-          checkpoints required by the assignment.
-  Pipeline (see step8_mask_baselines.ipynb):
-    1. The model is rebuilt directly from each checkpoint, inferring
-       num_classes / num_queries / num_blocks from the weight shapes.
-    2. Each image is passed through the model once. The mask architecture
-       output (mask_logits, class_logits) is converted to per-pixel class
-       scores via:
-         scores_{c,h,w} = sum_q sigmoid(mask_logits_{q,h,w})
-                                 * softmax(class_logits_q)_c
-    3. From those per-pixel scores, four post-hoc methods are computed:
-         - MSP, Max Logit, Max Entropy (as in Step 7)
-         - RbA (Rejected by All): - sum_c tanh(f_c). RbA is only meaningful
-           on a mask architecture, hence it appears here but not in Step 7.
-    4. Same metric code as Step 7 (AuPRC / FPR95 from scratch in NumPy).
-  The mIoU column reuses the Cityscapes-val semantic mIoU measured in
-  Steps 4-5 for each checkpoint (it does not change with the post-hoc method).
+ EoMT evaluated on three checkpoints. Per-pixel scores:
+   score_{c,h,w} = sum_q sigmoid(mask_logits_{q,h,w}) * softmax(class_logits_q)_c
+ MSP / Max Logit / Max Entropy / RbA applied on those scores.
+ mIoU from Steps 4-5 (unchanged across post-hoc methods).
 
 ------------------------------------------------------------------------
  EoMT - Cityscapes checkpoint (mIoU = 82.15)
@@ -53,14 +39,6 @@ HOW THESE NUMBERS WERE OBTAINED
  MaxEntropy      50.94  99.94   81.50  80.79    1.64  73.44   48.32  63.68   86.17  27.42
  RbA             25.29  86.26    2.85  44.83    0.41  58.02    2.78  55.13    7.75  92.92
 
-OBSERVATIONS
-  - Switching from a pixel-based model (Step 7) to the EoMT mask
-    architecture sharply improves anomaly separation on the in-domain
-    Cityscapes checkpoint: Max Logit and RbA reach AuPRC in the 60-90 range
-    on SMIYC RA-21 / RO-21, well above ERFNet.
-  - The COCO checkpoint is weak across the board (FPR95 near 100 on several
-    benchmarks): without road-scene alignment the scores barely separate
-    anomalies. Fine-tuning recovers a large part of this gap.
-  - The best post-hoc method is checkpoint-dependent: Max Logit is the most
-    consistent overall, RbA is strong on the Cityscapes checkpoint but
-    collapses on the fine-tuned one, which is worth discussing in the report.
+ The Cityscapes checkpoint dominates overall; Max Logit is the most
+ consistent method. RbA is strong on the Cityscapes ckpt but collapses
+ on the fine-tuned one, which is worth discussing in the report.

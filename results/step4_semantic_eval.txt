@@ -4,18 +4,10 @@
  Evaluation resolution: 640x640 (same for both models)
 ========================================================================
 
-THE COMPARISON PROBLEM
-  The two models predict in different label spaces (COCO: 133 panoptic
-  classes; Cityscapes: 19 semantic classes). For a fair comparison:
-   - both models are instantiated at the SAME resolution (640x640);
-   - the COCO predictions are remapped onto the 19 Cityscapes classes
-     through a hand-defined mapping (COCO -> Cityscapes);
-   - the SAME evaluation pipeline is used (same mIoU, same loader).
-
-  Three readings of the COCO model mIoU are reported:
-   - FAIR   : evaluated over all 19 Cityscapes classes
-   - COMMON : only over the classes that COCO can actually map
-   - ORACLE : upper bound with an ideal mapping assignment
+ Both models run at 640x640. COCO predictions are remapped to the 19
+ Cityscapes classes via a hand-defined COCO->Cityscapes mapping.
+ FAIR = all 19 classes; COMMON = mappable classes only; ORACLE = ideal mapping.
+ Source: results_sem_logits_rider1_20260525_091308.json
 
 ------------------------------------------------------------------------
  OVERALL mIoU (Cityscapes val)
@@ -24,8 +16,6 @@ THE COMPARISON PROBLEM
   EoMT-COCO  (FAIR, 19 classes) .........  51.13 %
   EoMT-COCO  (COMMON, mappable classes) .  63.66 %
   EoMT-COCO  (ORACLE) ...................  51.50 %
-
-  Source: results/Step4/results_sem_logits_rider1_20260525_091308.json
 
 ------------------------------------------------------------------------
  PER-CLASS IoU (%)
@@ -53,15 +43,5 @@ THE COMPARISON PROBLEM
   --------------------------------------------
   mIoU               82.15          51.13
 
-OBSERVATIONS
-  - The native Cityscapes model dominates on every class: expected, since
-    it was trained exactly on that domain and label space.
-  - The COCO collapse on classes like pole/traffic sign/train is largely
-    STRUCTURAL: these classes have no clean counterpart in COCO panoptic,
-    so the mapping cannot recover them.
-
-NOTE
-  The per-class IoU values above are taken directly from the JSON. They
-  match the per_class_iou_sem_logits_rider1_20260525_091308.csv to two
-  decimal places. The COMMON and ORACLE mIoU are now filled in from the
-  same JSON run.
+ COCO collapses on pole, traffic sign and train: no direct COCO panoptic
+ counterpart exists for those classes, so the mapping cannot recover them.
