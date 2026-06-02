@@ -1,0 +1,38 @@
+========================================================================
+ STEP 7 - PIXEL-BASED ANOMALY SEGMENTATION BASELINES (ERFNet)
+ Benchmarks: SMIYC RA-21 | SMIYC RO-21 | FS L&F | FS Static | Road Anomaly
+ Metrics   : AuPRC (higher is better), FPR95 (lower is better)
+========================================================================
+
+HOW THESE NUMBERS WERE OBTAINED
+  Model : ERFNet, the lightweight pixel-based segmentation network, loaded
+          from the pretrained Cityscapes weights (erfnet_pretrained.pth).
+  Pipeline (see Step7_pixel_baselines.ipynb):
+    1. Each validation image is resized to 512x1024 and passed through
+       ERFNet once, producing per-pixel logits f of shape (C, H, W).
+    2. From the SAME logits, three post-hoc anomaly scores are computed:
+         - MSP         : 1 - max_c softmax(f)_c        (low confidence -> anomaly)
+         - Max Logit   : - max_c f_c                   (low activation -> anomaly)
+         - Max Entropy : - sum_c p_c log p_c           (flat output  -> anomaly)
+    3. Ground-truth masks are normalised per dataset to {0: in-distribution,
+       1: anomaly}; only images that contain anomaly pixels are scored.
+    4. AuPRC and FPR@95TPR are computed from scratch in NumPy (no sklearn),
+       pooling pixels across each dataset.
+
+------------------------------------------------------------------------
+ ERFNet - per-method results (%)
+------------------------------------------------------------------------
+                  SMIYC RA-21    SMIYC RO-21      FS L&F       FS Static    Road Anomaly
+ Method   mIoU   AuPRC  FPR95   AuPRC  FPR95   AuPRC  FPR95   AuPRC  FPR95   AuPRC  FPR95
+ MSP       --    29.09  62.54    2.70  65.22    1.74  50.65    7.47  41.83   12.42  82.57
+ MaxLogit  --    38.31  59.33    4.62  48.44    3.29  45.53    9.49  40.30   15.58  73.24
+ MaxEntropy--    30.96  62.65    3.04  65.91    2.58  50.21    8.83  41.54   12.66  82.74
+
+NOTES
+  - The ERFNet segmentation mIoU is left as "--": the anomaly pipeline does
+    not recompute it, and it does not change across post-hoc methods.
+  - Max Logit is the strongest pixel-based score here, consistently beating
+    MSP and Max Entropy: raw activations separate anomalies better than the
+    normalised softmax confidence on this network.
+  - Absolute AuPRC stays low on FS L&F and SMIYC RO-21: small/!far anomalies
+    are hard for a pixel-based model with no anomaly-specific training.
