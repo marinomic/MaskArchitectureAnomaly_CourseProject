@@ -10,7 +10,7 @@
  mIoU from Steps 4-5 (unchanged across post-hoc methods).
 
 ------------------------------------------------------------------------
- EoMT - Cityscapes checkpoint (mIoU = 82.15)
+ EoMT - Cityscapes checkpoint (mIoU = 80.31)
 ------------------------------------------------------------------------
                   SMIYC RA-21    SMIYC RO-21      FS L&F       FS Static    Road Anomaly
  Method          AuPRC  FPR95   AuPRC  FPR95   AuPRC  FPR95   AuPRC  FPR95   AuPRC  FPR95
@@ -30,7 +30,7 @@
  RbA             16.51  81.67   55.39  99.87    0.26  97.17    2.26  95.65   15.94  85.67
 
 ------------------------------------------------------------------------
- EoMT - Fine-tuned checkpoint (COCO -> Cityscapes, mIoU = 69.87)
+ EoMT - Fine-tuned checkpoint (COCO -> Cityscapes, mIoU = 70.39)
 ------------------------------------------------------------------------
                   SMIYC RA-21    SMIYC RO-21      FS L&F       FS Static    Road Anomaly
  Method          AuPRC  FPR95   AuPRC  FPR95   AuPRC  FPR95   AuPRC  FPR95   AuPRC  FPR95

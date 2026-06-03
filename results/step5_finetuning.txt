@@ -6,43 +6,44 @@
 
  Two-phase AdamW fine-tune (20 000 steps, AMP): head-only first
  (LR_head=5e-5, backbone frozen), then full network (LR_head=5e-5,
- LR_backbone=5e-6, cosine decay). 69.87% is best val mIoU from Phase 2
- (step 18500). Fine-tuned checkpoint: eomt_coco_full_finetuned_cityscapes.bin.
+ LR_backbone=5e-6, cosine decay). 69.87% is best val mIoU during Phase 2
+ training (subset eval, 50 batches). Full checkpoint evaluation on all 500
+ val images gives 70.39%. Fine-tuned checkpoint: eomt_coco_full_finetuned_cityscapes.bin.
 
 ------------------------------------------------------------------------
  OVERALL mIoU (Cityscapes val)
 ------------------------------------------------------------------------
   EoMT-COCO base (cross-domain) ........  51.13 %
-  EoMT-COCO fine-tuned (this work) .....  69.87 %
-  EoMT-Cityscapes (provided checkpoint)   82.15 %
+  EoMT-COCO fine-tuned (this work) .....  70.39 %
+  EoMT-Cityscapes (provided checkpoint)   80.31 %
 
 ------------------------------------------------------------------------
  PER-CLASS IoU (%)
-   Fine-tuned column not available: re-run evaluate_miou() on the saved
-   checkpoint to fill it in.
+   Fine-tuned values from evaluate_miou() on the saved checkpoint
+   (full 500-image val set). EoMT-CS values from run 20260526_180449.
 ------------------------------------------------------------------------
   Class            COCO base    Fine-tuned    EoMT-CS
-  road                93.94        <...>        98.43
-  sidewalk            64.09        <...>        87.55
-  building            83.54        <...>        94.19
-  wall                48.28        <...>        67.00
-  fence               42.12        <...>        66.40
-  pole                 0.05        <...>        71.23
-  traffic light       46.95        <...>        75.32
-  traffic sign         4.12        <...>        82.62
-  vegetation          85.19        <...>        93.13
-  terrain             54.09        <...>        67.75
-  sky                 87.84        <...>        95.57
-  person              61.92        <...>        85.61
-  rider               12.45        <...>        71.84
-  car                 80.98        <...>        95.72
-  truck               28.87        <...>        84.92
-  bus                 60.42        <...>        90.39
-  train                0.00        <...>        77.41
-  motorcycle          53.26        <...>        74.63
-  bicycle             63.36        <...>        81.11
+  road                93.94         98.06        98.27
+  sidewalk            64.09         84.53        86.59
+  building            83.54         90.45        93.47
+  wall                48.28         63.86        67.18
+  fence               42.12         59.83        66.95
+  pole                 0.05         43.78        66.52
+  traffic light       46.95         54.02        71.20
+  traffic sign         4.12         63.97        79.03
+  vegetation          85.19         89.99        92.35
+  terrain             54.09         68.80        66.60
+  sky                 87.84         93.24        94.98
+  person              61.92         68.57        82.45
+  rider               12.45         36.76        67.39
+  car                 80.98         91.99        94.84
+  truck               28.87         74.89        83.40
+  bus                 60.42         73.02        88.36
+  train                0.00         67.32        77.48
+  motorcycle          53.26         47.80        70.48
+  bicycle             63.36         66.61        78.36
   ----------------------------------------------------
-  mIoU                51.13        69.87        82.15
+  mIoU                51.13         70.39        80.31
 
- Fine-tuning closes most of the COCO->Cityscapes gap (+18.7 pp mIoU);
+ Fine-tuning closes most of the COCO->Cityscapes gap (+19.26 pp mIoU);
  pole, traffic sign and rider recover from near-zero in the COCO base.
