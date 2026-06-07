@@ -7,6 +7,8 @@
  ERFNet (erfnet_pretrained.pth), input 512x1024. Logits saved once;
  MSP, Max Logit and Max Entropy applied without re-running inference.
  AuPRC and FPR@95TPR computed in NumPy, pixels pooled per dataset.
+ mIoU (--): computed by Step7_pixel_baselines.ipynb cell 17 (Cityscapes
+ val conf-matrix loop); replace '--' with ERFNET_MIOU after Colab run.
 
 ------------------------------------------------------------------------
  ERFNet - per-method results (%)

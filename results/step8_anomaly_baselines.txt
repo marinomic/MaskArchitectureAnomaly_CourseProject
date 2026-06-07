@@ -4,10 +4,13 @@
  Metrics  : AuPRC (higher is better), FPR95 (lower is better)
 ========================================================================
 
- ERFNet source: eval/results.txt. Dataset attribution inferred by cross-
- referencing labeled temperature entries; RA-21 and FS L&F give 0.00
- because those subsets have no anomaly pixels under the correct label
- remapping. ERFNet mIoU not available (eval_iou.py output not saved).
+ ERFNet anomaly scores from eval/results.txt (evalAnomaly.py run).
+ RA-21 and FS L&F show 0.00 because those subsets contain no anomaly
+ pixels under the label remapping used by evalAnomaly.py (confirmed by
+ the labeled temperature-scaling entries in that file).
+ ERFNet mIoU (<..>): computed by Step7_pixel_baselines.ipynb cell 17
+ (conf-matrix accumulation in the Cityscapes val loop); update after
+ running the notebook on Colab and reading ERFNET_MIOU.
  EoMT values from step8_mask_baselines.txt (all three checkpoints).
  ERFNet best T = 1.3082 (NLL 0.178->0.167; ECE 0.017->0.003).
 
