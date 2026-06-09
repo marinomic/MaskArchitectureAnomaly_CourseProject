@@ -7,17 +7,17 @@
  ERFNet (erfnet_pretrained.pth), input 512x1024. Logits saved once;
  MSP, Max Logit and Max Entropy applied without re-running inference.
  AuPRC and FPR@95TPR computed in NumPy, pixels pooled per dataset.
- mIoU (--): computed by Step7_pixel_baselines.ipynb cell 17 (Cityscapes
- val conf-matrix loop); replace '--' with ERFNET_MIOU after Colab run.
+ ERFNet mIoU on Cityscapes val: 72.17 (computed by
+ Step7_pixel_baselines.ipynb cell 17, confusion-matrix loop).
 
 ------------------------------------------------------------------------
  ERFNet - per-method results (%)
 ------------------------------------------------------------------------
                   SMIYC RA-21    SMIYC RO-21      FS L&F       FS Static    Road Anomaly
  Method   mIoU   AuPRC  FPR95   AuPRC  FPR95   AuPRC  FPR95   AuPRC  FPR95   AuPRC  FPR95
- MSP       --    29.09  62.54    2.70  65.22    1.74  50.65    7.47  41.83   12.42  82.57
- MaxLogit  --    38.31  59.33    4.62  48.44    3.29  45.53    9.49  40.30   15.58  73.24
- MaxEntropy--    30.96  62.65    3.04  65.91    2.58  50.21    8.83  41.54   12.66  82.74
+ MSP       72.17  29.10  62.55    2.71  65.23    1.75  50.60    7.47  41.84   12.42  82.58
+ MaxLogit  72.17  38.32  59.34    4.63  48.44    3.30  45.49    9.50  40.30   15.58  73.25
+ MaxEntropy 72.17  30.97  62.66    3.04  65.91    2.58  50.16    8.84  41.55   12.67  82.75
 
  Max Logit is the strongest scorer: raw activations separate anomalies
  better than normalised softmax confidence on this network.
