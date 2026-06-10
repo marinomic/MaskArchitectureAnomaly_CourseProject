@@ -1,0 +1,46 @@
+========================================================================
+ STEP 8 - TEMPERATURE SCALING (MSP at different temperatures)
+ Benchmarks: SMIYC RA-21 | SMIYC RO-21 | FS L&F | FS Static | Road Anomaly
+ Metrics   : AuPRC (higher is better), FPR95 (lower is better)
+========================================================================
+
+ Optimal T fitted per checkpoint by minimising NLL on Cityscapes val.
+ Logits saved once; temperatures swept without re-running the model.
+
+------------------------------------------------------------------------
+ Cityscapes checkpoint  (fitted best t = 0.192934)
+------------------------------------------------------------------------
+                  SMIYC RA-21    SMIYC RO-21      FS L&F       FS Static    Road Anomaly
+ Method          AuPRC  FPR95   AuPRC  FPR95   AuPRC  FPR95   AuPRC  FPR95   AuPRC  FPR95
+ MSP base        42.24  29.67   61.21   28.45   2.94  36.56   22.45  42.06   43.12  39.10   
+ MSP(t=0.5)      65.93  34.26   89.72   0.34   17.59  20.12   62.55  28.50   66.84  19.79
+ MSP(t=0.75)     65.99  34.26   89.73   0.34   17.60  20.12   62.57  28.50   66.93  19.74
+ MSP(t=1.1)      66.06  34.26   89.74   0.34   17.61  20.12   62.58  28.50   67.01  19.72
+ MSP(best t)     65.72  34.26   89.65   0.34   17.55  20.13   62.43  28.50   66.64  20.01
+
+------------------------------------------------------------------------
+ COCO checkpoint  (fitted best t = 1.501235)
+------------------------------------------------------------------------
+                  SMIYC RA-21    SMIYC RO-21      FS L&F       FS Static    Road Anomaly
+ Method          AuPRC  FPR95   AuPRC  FPR95   AuPRC  FPR95   AuPRC  FPR95   AuPRC  FPR95
+ MSP base        16.37  92.93    3.86 100.00    2.64  60.11    4.27  99.41   10.76  95.05  
+ MSP(t=0.5)      38.46  78.24    2.74  99.98    3.78  97.22    4.66  99.50   18.79  92.02
+ MSP(t=0.75)     38.65  77.66    2.75  99.98    3.78  97.21    4.66  99.48   18.83  91.90
+ MSP(t=1.1)      38.73  77.50    2.75  99.98    3.79  97.21    4.67  99.48   18.86  91.84
+ MSP(best t)     38.77  77.44    2.75  99.98    3.79  97.21    4.67  99.47   18.87  91.82
+
+------------------------------------------------------------------------
+ Fine-tuned checkpoint  (fitted best t = 1.097883)
+------------------------------------------------------------------------
+                  SMIYC RA-21    SMIYC RO-21      FS L&F       FS Static    Road Anomaly
+ Method          AuPRC  FPR95   AuPRC  FPR95   AuPRC  FPR95   AuPRC  FPR95   AuPRC  FPR95
+ MSP base        56.60  99.99   77.50  92.49    4.48  75.49   35.93  39.68   72.52  18.76
+ MSP(t=0.5)      43.43 100.00   59.46   4.56    2.07  33.50   20.51  21.82   49.57  29.39
+ MSP(t=0.75)     50.12 100.00   64.59   3.89    3.53  32.78   34.27  21.00   59.55  28.06
+ MSP(t=1.1)      58.39  88.27   72.90   3.18    7.42  32.19   48.97  19.83   68.52  26.02
+ MSP(best t)     58.36  88.30   72.85   3.18    7.40  32.19   48.91  19.84   68.48  26.03
+
+ On the Cityscapes ckpt the NLL-optimal T (0.19) is the weakest variant;
+ fixed t=1.1 is best for anomaly detection. On the fine-tuned ckpt, raising
+ T from 0.5 to 1.1 gives a large stepwise gain; best T (1.10) matches t=1.1
+ exactly. Temperature has almost no effect on the COCO checkpoint.

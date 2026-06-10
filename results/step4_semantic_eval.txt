@@ -1,0 +1,47 @@
+========================================================================
+ STEP 4 - EoMT-CITYSCAPES vs EoMT-COCO COMPARISON
+ Task: semantic segmentation | Dataset: Cityscapes val (500 images)
+ Evaluation resolution: 640x640 (same for both models)
+========================================================================
+
+ Both models run at 640x640. COCO predictions are remapped to the 19
+ Cityscapes classes via a hand-defined COCO->Cityscapes mapping.
+ FAIR = all 19 classes; COMMON = mappable classes only; ORACLE = ideal mapping.
+ Source: results_sem_logits_rider1_20260526_180449.json
+
+------------------------------------------------------------------------
+ OVERALL mIoU (Cityscapes val)
+------------------------------------------------------------------------
+  EoMT-Cityscapes (provided checkpoint) .  80.31 %
+  EoMT-COCO  (FAIR, 19 classes) .........  51.13 %
+  EoMT-COCO  (COMMON, mappable classes) .  63.66 %
+  EoMT-COCO  (ORACLE) ...................  51.50 %
+
+------------------------------------------------------------------------
+ PER-CLASS IoU (%)
+------------------------------------------------------------------------
+  Class            EoMT-CS     EoMT-COCO (FAIR)
+  road               98.27          93.94
+  sidewalk           86.59          64.09
+  building           93.47          83.54
+  wall               67.18          48.28
+  fence              66.95          42.12
+  pole               66.52           0.05
+  traffic light      71.20          46.95
+  traffic sign       79.03           4.12
+  vegetation         92.35          85.19
+  terrain            66.60          54.09
+  sky                94.98          87.84
+  person             82.45          61.92
+  rider              67.39          12.45
+  car                94.84          80.98
+  truck              83.40          28.87
+  bus                88.36          60.42
+  train              77.48           0.00
+  motorcycle         70.48          53.26
+  bicycle            78.36          63.36
+  --------------------------------------------
+  mIoU               80.31          51.13
+
+ COCO collapses on pole, traffic sign and train: no direct COCO panoptic
+ counterpart exists for those classes, so the mapping cannot recover them.

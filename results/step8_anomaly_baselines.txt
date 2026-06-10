@@ -1,0 +1,36 @@
+========================================================================
+ STEP 7-8 - ANOMALY SEGMENTATION: POST-HOC BASELINES
+ Benchmarks: SMIYC RA-21 | SMIYC RO-21 | FS L&F | FS Static | Road Anomaly
+ Metrics  : AuPRC (higher is better), FPR95 (lower is better)
+========================================================================
+
+ ERFNet anomaly scores from Step7_pixel_baselines.ipynb (NumPy evaluation).
+ ERFNet mIoU: 72.17 (computed by Step7_pixel_baselines.ipynb cell 17,
+ Cityscapes val confusion-matrix loop).
+ EoMT values from step8_mask_baselines.txt (all three checkpoints).
+ ERFNet best T = 1.3082 (NLL 0.178->0.167; ECE 0.017->0.003).
+
+------------------------------------------------------------------------
+ TABLE 1 - Post-hoc method comparison
+------------------------------------------------------------------------
+                                 SMIYC RA-21    SMIYC RO-21    FS L&F        FS Static     Road Anomaly
+ Model    mIoU  Method         AuPRC  FPR95   AuPRC  FPR95   AuPRC  FPR95  AuPRC  FPR95  AuPRC  FPR95
+ ERFNet  72.17  MSP            29.10  62.55    2.71  65.23    1.75  50.60    7.47  41.84  12.42  82.58
+                MaxLogit       38.32  59.34    4.63  48.44    3.30  45.49    9.50  40.30  15.58  73.25
+                MaxEntropy     30.97  62.66    3.04  65.91    2.58  50.16    8.84  41.55  12.67  82.75
+ EoMT-CS 80.31  MSP            42.24  29.67   61.21  28.45    2.94  36.56  22.45  42.06  43.12  39.10
+                MaxLogit        65.81  34.48   89.72   0.33   17.60  19.74  62.56  29.62  66.55  19.73
+                MaxEntropy      49.30  29.14   69.57  27.70    3.96  38.13  25.85  42.37  49.96  39.77
+                RbA             63.79  84.60   88.45   0.68   17.86  13.09  62.86  22.93  66.11  17.06
+ EoMT-FT 70.39  MSP            56.60  99.99   77.50  92.49    4.48  75.49  35.93  39.68  72.52  18.76
+                MaxLogit        66.18  79.92   89.35   1.55   23.98  30.17  68.29  16.30  77.81  21.10
+                MaxEntropy      50.94  99.94   81.50  80.79    1.64  73.44  48.32  63.68  86.17  27.42
+                RbA             25.29  86.26    2.85  44.83    0.41  58.02   2.78  55.13   7.75  92.92
+ EoMT-CO 51.13  MSP            16.37  92.93    3.86 100.00    2.64  60.11   4.27  99.41  10.76  95.05
+                MaxLogit        39.02  77.04    2.74  99.98    3.77  97.20   4.67  99.45  19.01  91.58
+                MaxEntropy      29.02  92.16    9.16 100.00    9.71  52.80   5.95  99.34  18.19  94.79
+                RbA             16.51  81.67   55.39  99.87    0.26  97.17   2.26  95.65  15.94  85.67
+
+ EoMT-CS = Cityscapes checkpoint; EoMT-FT = fine-tuned (COCO->CS); EoMT-CO = COCO checkpoint.
+ Full per-method tables and temperature-scaling results in step8_mask_baselines.txt
+ and step8_temperature_scaling.txt.

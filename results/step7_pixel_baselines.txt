@@ -1,0 +1,23 @@
+========================================================================
+ STEP 7 - PIXEL-BASED ANOMALY SEGMENTATION BASELINES (ERFNet)
+ Benchmarks: SMIYC RA-21 | SMIYC RO-21 | FS L&F | FS Static | Road Anomaly
+ Metrics   : AuPRC (higher is better), FPR95 (lower is better)
+========================================================================
+
+ ERFNet (erfnet_pretrained.pth), input 512x1024. Logits saved once;
+ MSP, Max Logit and Max Entropy applied without re-running inference.
+ AuPRC and FPR@95TPR computed in NumPy, pixels pooled per dataset.
+ ERFNet mIoU on Cityscapes val: 72.17 (computed by
+ Step7_pixel_baselines.ipynb cell 17, confusion-matrix loop).
+
+------------------------------------------------------------------------
+ ERFNet - per-method results (%)
+------------------------------------------------------------------------
+                  SMIYC RA-21    SMIYC RO-21      FS L&F       FS Static    Road Anomaly
+ Method   mIoU   AuPRC  FPR95   AuPRC  FPR95   AuPRC  FPR95   AuPRC  FPR95   AuPRC  FPR95
+ MSP       72.17  29.10  62.55    2.71  65.23    1.75  50.60    7.47  41.84   12.42  82.58
+ MaxLogit  72.17  38.32  59.34    4.63  48.44    3.30  45.49    9.50  40.30   15.58  73.25
+ MaxEntropy 72.17  30.97  62.66    3.04  65.91    2.58  50.16    8.84  41.55   12.67  82.75
+
+ Max Logit is the strongest scorer: raw activations separate anomalies
+ better than normalised softmax confidence on this network.
